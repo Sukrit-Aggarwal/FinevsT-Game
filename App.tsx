@@ -273,7 +273,7 @@ function App() {
               <div className="text-4xl font-black mb-6 tracking-tighter uppercase text-[#DC2626]">India 2028 Simulation</div>
               
               <p className="text-xl font-medium text-gray-800 mb-8 leading-relaxed border-l-4 border-black pl-4">
-                <strong>Profile:</strong> IIM Trichy Graduate, Class of '28.<br/>
+                <strong>Profile:</strong> IIM Trichy Grad (26/27).<br/>
                 <strong>Role:</strong> Hedge Fund Manager, Mumbai.<br/>
                 <strong>Mission:</strong> Navigate the "Great Displacement" AI economy.
               </p>
