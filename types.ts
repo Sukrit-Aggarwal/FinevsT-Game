@@ -1,3 +1,4 @@
+
 export enum AssetType {
   IND_EQ = 'IND_EQ',
   US_EQ = 'US_EQ',
@@ -32,9 +33,24 @@ export interface GameState {
   currentRound: number; // 0 is intro, 1-12 is game
   phase: 'INTRO' | 'STRATEGY' | 'EXECUTING' | 'RESULT' | 'GAME_OVER';
   portfolio: Portfolio;
+  costBasis: Portfolio; // Track average cost for tax calc
   nav: number;
   history: Array<{ round: number; nav: number; benchmark: number }>;
   lastRoundReturn: number;
+}
+
+export interface RoundReport {
+  roundId: number;
+  newsHeadline: string;
+  marketReturns: Record<AssetType, number>;
+  portfolioStart: Portfolio;
+  allocations: Record<string, number>;
+  transactionFees: Record<AssetType, number>;
+  taxes: Record<AssetType, number>;
+  portfolioEnd: Portfolio;
+  assetPnL: Record<AssetType, number>;
+  totalPnL: number;
+  explanation?: string;
 }
 
 // Bauhaus Color Palette Helpers
