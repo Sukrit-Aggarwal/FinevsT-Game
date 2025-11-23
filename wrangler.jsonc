@@ -1,0 +1,17 @@
+{
+  "name": "the-alpha-edge-india-2028",
+  "type": "javascript",
+  "main": "dist/index.html",
+  "compatibility_date": "2025-11-23",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "env": {
+    "production": {
+      "vars": {
+        "ENVIRONMENT": "production"
+      }
+    }
+  }
+}
