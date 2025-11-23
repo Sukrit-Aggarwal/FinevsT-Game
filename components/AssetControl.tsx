@@ -1,7 +1,7 @@
 import React from 'react';
 import { AssetType } from '../types';
 import { ASSET_LABELS } from '../constants';
-import { Lock, TrendingUp, TrendingDown, Ban } from 'lucide-react';
+import { Lock, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface AssetControlProps {
   type: AssetType;
@@ -9,6 +9,7 @@ interface AssetControlProps {
   delta: number;
   maxMove: number; // For Selling: The Fixed Limit (e.g., 25 Cr). For Buying: Ignored.
   maxBuyLimit: number; // Max allowed buy based on Cash available
+  totalCashStart: number; // The total cash at start of round, for stable slider scaling
   onDeltaChange: (type: AssetType, delta: number) => void;
 }
 
@@ -18,6 +19,7 @@ export const AssetControl: React.FC<AssetControlProps> = ({
   delta,
   maxMove,
   maxBuyLimit,
+  totalCashStart,
   onDeltaChange
 }) => {
   if (type === AssetType.CASH) return null;
@@ -48,8 +50,8 @@ export const AssetControl: React.FC<AssetControlProps> = ({
   };
 
   const projectedValue = currentValue + delta;
-  const isSelling = delta < 0;
   const isBuying = delta > 0;
+  const isSelling = delta < 0;
   
   // Buying is maxed out if we hit cash limit
   const isBuyMaxed = delta > 0 && Math.abs(delta - effectiveMaxBuy) < 0.1;
@@ -58,9 +60,8 @@ export const AssetControl: React.FC<AssetControlProps> = ({
   const isSellMaxed = delta < 0 && Math.abs(Math.abs(delta) - maxMove) < 0.1;
 
   // Slider Range Calculation
-  // We need a visual range that can accommodate the max possible moves.
-  // We use a minimum of 50 to keep the UI consistent, but expand if user has more cash/assets.
-  const sliderRange = Math.max(effectiveMaxBuy, maxMove, 50); 
+  // Use totalCashStart to keep the scale constant during interaction, preventing jumping.
+  const sliderRange = Math.max(totalCashStart, maxMove, 50); 
   
   // Inline style for the striped pattern (blocked zone)
   const blockedPatternStyle = {
