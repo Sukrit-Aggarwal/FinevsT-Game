@@ -1,15 +1,18 @@
+
 import React, { useState } from 'react';
 import { 
   Portfolio, 
   GameState, 
   AssetType, 
+  RoundReport
 } from './types';
 import { 
-  INITIAL_CASH, 
+  INITIAL_FUND_SIZE, 
   MAX_ROUNDS, 
   SELL_LIMIT_AMOUNT,
   SCENARIO_DATA,
-  ASSET_LABELS
+  ASSET_LABELS,
+  INITIAL_PORTFOLIO_CONFIG
 } from './constants';
 import { Card } from './components/Card';
 import { Button } from './components/Button';
@@ -21,37 +24,20 @@ import {
   TrendingUp,
   ArrowRight,
   Info,
-  BookOpen
+  BookOpen,
+  BarChart2,
+  X
 } from 'lucide-react';
-
-const INITIAL_PORTFOLIO: Portfolio = {
-  [AssetType.IND_EQ]: 0,
-  [AssetType.US_EQ]: 0,
-  [AssetType.G_SEC]: 0,
-  [AssetType.GOLD]: 0,
-  [AssetType.CASH]: INITIAL_CASH,
-};
-
-interface RoundReport {
-  roundId: number;
-  newsHeadline: string;
-  marketReturns: Record<AssetType, number>;
-  portfolioStart: Portfolio;
-  allocations: Record<string, number>;
-  portfolioEnd: Portfolio;
-  assetPnL: Record<AssetType, number>;
-  totalPnL: number;
-  explanation?: string;
-}
 
 function App() {
   // --- STATE ---
   const [gameState, setGameState] = useState<GameState>({
     currentRound: 0,
     phase: 'INTRO',
-    portfolio: { ...INITIAL_PORTFOLIO },
-    nav: INITIAL_CASH,
-    history: [{ round: 0, nav: INITIAL_CASH, benchmark: INITIAL_CASH }],
+    portfolio: { ...INITIAL_PORTFOLIO_CONFIG },
+    costBasis: { ...INITIAL_PORTFOLIO_CONFIG }, // Initial Basis = Initial Value
+    nav: INITIAL_FUND_SIZE,
+    history: [{ round: 0, nav: INITIAL_FUND_SIZE, benchmark: INITIAL_FUND_SIZE }],
     lastRoundReturn: 0
   });
 
@@ -64,19 +50,71 @@ function App() {
 
   const [lastRoundReport, setLastRoundReport] = useState<RoundReport | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showGraph, setShowGraph] = useState(false);
 
-  // --- DERIVED STATE ---
-  const currentScenario = SCENARIO_DATA.find(r => r.id === gameState.currentRound) || SCENARIO_DATA[0];
+  // --- CALCULATIONS & LOGIC ---
+
+  const calculateTransactionEffects = (allocs: Record<string, number>) => {
+    let totalFees = 0;
+    let totalTax = 0;
+    const taxDetails: Record<AssetType, number> = { 
+      [AssetType.IND_EQ]: 0, [AssetType.US_EQ]: 0, [AssetType.G_SEC]: 0, [AssetType.GOLD]: 0, [AssetType.CASH]: 0 
+    };
+    const feeDetails: Record<AssetType, number> = { ...taxDetails };
+
+    (Object.keys(allocs) as AssetType[]).forEach(asset => {
+      const delta = allocs[asset];
+      if (delta === 0) return;
+
+      // 1. Transaction Fees (1% on Equity Buy/Sell)
+      if (asset === AssetType.IND_EQ || asset === AssetType.US_EQ) {
+        const fee = Math.abs(delta) * 0.01;
+        totalFees += fee;
+        feeDetails[asset] = fee;
+      }
+
+      // 2. Taxes (Selling only)
+      if (delta < 0) {
+        const sellAmount = Math.abs(delta);
+        const currentVal = gameState.portfolio[asset];
+        // Calculate Portion of Cost Basis sold
+        const ratio = sellAmount / currentVal;
+        const costOfSold = gameState.costBasis[asset] * ratio;
+        const gain = sellAmount - costOfSold;
+
+        if (gain > 0) {
+           // Tax Rates: 10% IND_EQ, 15% US_EQ, 0% Others
+           let taxRate = 0;
+           if (asset === AssetType.IND_EQ) taxRate = 0.10;
+           if (asset === AssetType.US_EQ) taxRate = 0.15;
+           
+           const tax = gain * taxRate;
+           totalTax += tax;
+           taxDetails[asset] = tax;
+        }
+      }
+    });
+
+    return { totalFees, totalTax, feeDetails, taxDetails };
+  };
+
+  const currentEffects = calculateTransactionEffects(allocations);
   
-  // Calculate Available Cash considering other allocations
-  const pendingCashDelta = (Object.values(allocations) as number[]).reduce((acc, val) => acc + val, 0);
-  const projectedCash = gameState.portfolio[AssetType.CASH] - pendingCashDelta;
+  const pendingAssetDelta = (Object.values(allocations) as number[]).reduce((acc, val) => acc + val, 0);
+  const projectedCash = gameState.portfolio[AssetType.CASH] - pendingAssetDelta - currentEffects.totalFees - currentEffects.totalTax;
+  
+  const currentScenario = SCENARIO_DATA.find(r => r.id === gameState.currentRound) || SCENARIO_DATA[0];
   
   const getAvailableCashForAsset = (type: AssetType) => {
     const otherAllocations = Object.entries(allocations)
       .filter(([key]) => key !== type)
       .reduce((sum, [, val]) => sum + (val as number), 0);
-    return gameState.portfolio[AssetType.CASH] - otherAllocations;
+    
+    // Estimated fees/taxes for *other* allocations to safeguard cash
+    // This is an approximation for UI limit; strict check happens at execution
+    const approxOtherCost = Math.abs(otherAllocations) * 0.02; // Safe buffer
+    
+    return gameState.portfolio[AssetType.CASH] - otherAllocations - approxOtherCost;
   };
 
   // --- ACTIONS ---
@@ -103,15 +141,33 @@ function App() {
     setGameState(prev => ({ ...prev, phase: 'EXECUTING' }));
 
     setTimeout(() => {
-      // 1. Apply Allocations
+      // 1. Process Trades & Costs
+      const effects = calculateTransactionEffects(allocations);
       const preMarketPortfolio = { ...gameState.portfolio } as Record<AssetType, number>;
+      const newCostBasis = { ...gameState.costBasis } as Record<AssetType, number>;
+      
       let cash = preMarketPortfolio[AssetType.CASH];
 
+      // Deduct Flows
       (Object.keys(allocations) as AssetType[]).forEach(asset => {
         const delta = allocations[asset] as number;
+        
+        // Update Cost Basis
+        if (delta > 0) {
+          // Buy: Add to basis
+          newCostBasis[asset] += delta;
+        } else if (delta < 0) {
+           // Sell: Reduce basis proportionally
+           const ratio = Math.abs(delta) / preMarketPortfolio[asset];
+           newCostBasis[asset] -= (newCostBasis[asset] * ratio);
+        }
+
         preMarketPortfolio[asset] += delta;
         cash -= delta;
       });
+
+      // Deduct Fees & Tax from Cash
+      cash -= (effects.totalFees + effects.totalTax);
       preMarketPortfolio[AssetType.CASH] = cash;
 
       // 2. Apply Market Returns
@@ -129,6 +185,7 @@ function App() {
           assetPnL[asset] = gain;
           finalPortfolio[asset] += gain;
           totalPnL += gain;
+          // Note: Unrealized gains do NOT increase Cost Basis
         } else {
           assetPnL[asset] = 0;
         }
@@ -151,6 +208,8 @@ function App() {
         marketReturns: roundReturns as Record<AssetType, number>,
         portfolioStart: { ...gameState.portfolio },
         allocations: { ...allocations },
+        transactionFees: effects.feeDetails,
+        taxes: effects.taxDetails,
         portfolioEnd: finalPortfolio,
         assetPnL,
         totalPnL,
@@ -162,6 +221,7 @@ function App() {
         ...prev,
         phase: 'RESULT',
         portfolio: finalPortfolio,
+        costBasis: newCostBasis,
         nav: newNav,
         history: [...prev.history, { round: prev.currentRound, nav: newNav, benchmark: newBenchmark }],
         lastRoundReturn: navChangePct
@@ -196,7 +256,6 @@ function App() {
     const allValues = gameState.history.flatMap(h => [h.nav, h.benchmark]);
     const min = Math.min(...allValues);
     const max = Math.max(...allValues);
-    // Add a 10% buffer to min and max to prevent clipping
     const range = max - min;
     const buffer = range === 0 ? 10 : range * 0.1;
     return [Math.max(0, min - buffer), max + buffer];
@@ -214,27 +273,44 @@ function App() {
               <div className="text-4xl font-black mb-6 tracking-tighter uppercase text-[#DC2626]">India 2028 Simulation</div>
               
               <p className="text-xl font-medium text-gray-800 mb-8 leading-relaxed border-l-4 border-black pl-4">
-                Welcome, CIO. <br/>
-                It is 2028. AI agents are in every phone, and India is the global hardware hub.
-                But bubbles form quickly. Outperform the Nifty 100 while managing liquidity shocks.
+                <strong>Profile:</strong> IIM Trichy Graduate, Class of '28.<br/>
+                <strong>Role:</strong> Hedge Fund Manager, Mumbai.<br/>
+                <strong>Mission:</strong> Navigate the "Great Displacement" AI economy.
               </p>
               
-              <div className="bg-[#FEF9C3] border-2 border-black p-6 mb-10">
-                <h3 className="font-black text-lg flex items-center gap-2 mb-2 uppercase">
-                  <AlertTriangle className="text-black" strokeWidth={3} /> 
-                  Critical Rule: The Liquidity Trap
-                </h3>
-                <p className="text-base font-medium">
-                  <strong>Buying is Easy, Selling is Hard.</strong><br/>
-                  You can buy as much as your Cash allows.<br/>
-                  BUT market depth is limited: You cannot SELL more than <strong>₹{SELL_LIMIT_AMOUNT} Cr</strong> per asset class, per month.
-                  <br/>
-                  <em>If you build a massive position, you may be trapped when the crash comes.</em>
-                </p>
+              <div className="bg-[#FEF9C3] border-2 border-black p-6 mb-8">
+                <h3 className="font-black text-lg mb-2 uppercase">Current Portfolio Position (₹100 Cr)</h3>
+                <div className="grid grid-cols-4 gap-2 text-center text-sm font-bold">
+                   <div className="p-2 bg-white border border-black">
+                      <div className="text-gray-500">IND_EQ</div>
+                      <div>50%</div>
+                   </div>
+                   <div className="p-2 bg-white border border-black">
+                      <div className="text-gray-500">US_EQ</div>
+                      <div>20%</div>
+                   </div>
+                   <div className="p-2 bg-white border border-black">
+                      <div className="text-gray-500">G-SEC</div>
+                      <div>20%</div>
+                   </div>
+                   <div className="p-2 bg-white border border-black">
+                      <div className="text-gray-500">GOLD</div>
+                      <div>10%</div>
+                   </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-100 border-2 border-black p-4 mb-8 text-sm">
+                <h4 className="font-bold uppercase mb-1">Trading Rules:</h4>
+                <ul className="list-disc pl-4 space-y-1">
+                   <li><strong>Liquidity Lock:</strong> Max Sell ₹{SELL_LIMIT_AMOUNT} Cr per asset/month.</li>
+                   <li><strong>Transaction Fee:</strong> 1% on Equity Buy/Sell.</li>
+                   <li><strong>Taxes:</strong> 10% on Ind Eq Profits, 15% on US Eq Profits (realized on sell).</li>
+                </ul>
               </div>
 
               <Button fullWidth onClick={startGame} className="text-2xl py-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                Initialize Trading Terminal
+                Initialize Terminal
               </Button>
             </div>
           </div>
@@ -259,21 +335,49 @@ function App() {
               <span className="text-red-600 font-bold uppercase tracking-widest animate-pulse">Strategy Phase</span>
             </div>
             <h2 className="text-4xl font-black uppercase tracking-tight">{currentScenario.title}</h2>
-            <span className="font-mono text-sm text-gray-500 font-bold">MUMBAI_HQ // DECISIONS LOCKED EXECUTE NEXT MONTH</span>
           </div>
-          <div className="text-right mt-4 md:mt-0">
-            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Total Fund Value (NAV)</div>
-            <div className="text-5xl font-black font-mono tracking-tighter text-[#1E3A8A]">₹{gameState.nav.toFixed(2)} Cr</div>
+          <div className="text-right mt-4 md:mt-0 flex flex-col items-end gap-2">
+            <div>
+                <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Total Fund Value (NAV)</div>
+                <div className="text-5xl font-black font-mono tracking-tighter text-[#1E3A8A]">₹{gameState.nav.toFixed(2)} Cr</div>
+            </div>
+            <button 
+                onClick={() => setShowGraph(!showGraph)}
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest border-2 border-black px-3 py-1 hover:bg-black hover:text-white transition-colors"
+            >
+                <BarChart2 size={14} /> {showGraph ? 'Hide Performance' : 'Show Performance'}
+            </button>
           </div>
         </div>
 
         {/* LEFT COL: INTEL */}
         <div className="col-span-12 lg:col-span-7 flex flex-col gap-6">
+          {showGraph && (
+              <Card title="Alpha vs Benchmark (Nifty 100)" className="h-[350px] relative animate-in fade-in slide-in-from-top-4">
+                <button onClick={() => setShowGraph(false)} className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded border border-transparent hover:border-black transition-all">
+                    <X size={20}/>
+                </button>
+                 <ResponsiveContainer width="100%" height="100%">
+                   <LineChart data={gameState.history} margin={{top: 20, right: 20, left: 10, bottom: 20}}>
+                     <XAxis dataKey="round" hide />
+                     <YAxis domain={getGraphDomain()} hide />
+                     <Tooltip 
+                       contentStyle={{border: '2px solid black', borderRadius: '0px', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
+                       itemStyle={{fontFamily: 'monospace', fontWeight: 'bold'}}
+                     />
+                     <Legend verticalAlign="top" height={36} iconType="rect" />
+                     <Line name="Alpha Fund (You)" type="monotone" dataKey="nav" stroke="#1E3A8A" strokeWidth={3} dot={{r: 4, fill:'#1E3A8A'}} />
+                     <Line name="Nifty 100 (Bench)" type="monotone" dataKey="benchmark" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                   </LineChart>
+                 </ResponsiveContainer>
+              </Card>
+          )}
+
           <Card title="Market Intelligence" accentColor="bg-blue-800" className="flex-grow flex flex-col min-h-[400px]">
             <div className="flex-1 overflow-y-auto pr-4 font-sans text-base leading-relaxed">
-              <p className="mb-6 text-lg font-medium border-l-4 border-[#1E3A8A] pl-4 py-1">
+              <div className="whitespace-pre-wrap mb-6 font-medium border-l-4 border-[#1E3A8A] pl-4 py-1 text-gray-800">
                 {currentScenario.news}
-              </p>
+              </div>
               
               <div className="grid grid-cols-4 gap-4 mb-6">
                 {[
@@ -302,22 +406,6 @@ function App() {
               </div>
             </div>
           </Card>
-
-          <Card title="Alpha vs Benchmark (Nifty 100)" className="h-[350px]">
-             <ResponsiveContainer width="100%" height="100%">
-               <LineChart data={gameState.history} margin={{top: 20, right: 20, left: 10, bottom: 20}}>
-                 <XAxis dataKey="round" hide />
-                 <YAxis domain={getGraphDomain()} hide />
-                 <Tooltip 
-                   contentStyle={{border: '2px solid black', borderRadius: '0px', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
-                   itemStyle={{fontFamily: 'monospace', fontWeight: 'bold'}}
-                 />
-                 <Legend verticalAlign="top" height={36} iconType="rect" />
-                 <Line name="Alpha Fund (You)" type="monotone" dataKey="nav" stroke="#1E3A8A" strokeWidth={3} dot={{r: 4, fill:'#1E3A8A'}} />
-                 <Line name="Nifty 100 (Bench)" type="monotone" dataKey="benchmark" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-               </LineChart>
-             </ResponsiveContainer>
-          </Card>
         </div>
 
         {/* RIGHT COL: ACTION */}
@@ -328,11 +416,17 @@ function App() {
             </div>
 
             <div className="flex-grow">
-              <div className="bg-black text-white p-4 mb-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(100,100,100,1)] flex justify-between items-center">
-                <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Buying Power (Cash)</span>
-                <span className={`font-mono font-bold text-2xl ${projectedCash < 0 ? 'text-red-400' : 'text-white'}`}>
-                  ₹{projectedCash.toFixed(2)} Cr
-                </span>
+              <div className="bg-black text-white p-4 mb-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(100,100,100,1)] flex flex-col gap-2">
+                 <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Est. Cash After Trades</span>
+                    <span className={`font-mono font-bold text-2xl ${projectedCash < 0 ? 'text-red-400' : 'text-white'}`}>
+                    ₹{projectedCash.toFixed(2)} Cr
+                    </span>
+                 </div>
+                 <div className="flex justify-between text-[10px] text-gray-500 font-mono border-t border-gray-800 pt-2">
+                    <span>Fees: ₹{currentEffects.totalFees.toFixed(2)} Cr</span>
+                    <span>Est. Tax: ₹{currentEffects.totalTax.toFixed(2)} Cr</span>
+                 </div>
               </div>
 
               <div className="space-y-6 pr-2">
@@ -342,8 +436,9 @@ function App() {
                     type={type as AssetType}
                     currentValue={gameState.portfolio[type as AssetType]}
                     delta={allocations[type]}
-                    maxMove={SELL_LIMIT_AMOUNT} // Fixed Limit for Selling
+                    maxMove={SELL_LIMIT_AMOUNT}
                     maxBuyLimit={getAvailableCashForAsset(type as AssetType)}
+                    totalCashStart={gameState.portfolio[AssetType.CASH]} 
                     onDeltaChange={handleAllocationChange}
                   />
                 ))}
@@ -384,7 +479,7 @@ function App() {
       </div>
       <h2 className="text-4xl font-black uppercase tracking-widest animate-pulse">Executing Orders</h2>
       <div className="font-mono mt-4 text-gray-400 flex flex-col items-center gap-2">
-        <span>PROCESSING MARKET DATA...</span>
+        <span>CALCULATING TAX OBLIGATIONS...</span>
         <span>REBALANCING PORTFOLIO...</span>
       </div>
     </div>
@@ -396,11 +491,11 @@ function App() {
 
     return (
       <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div className="bg-[#FDFBF7] border-4 border-black shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] max-w-4xl w-full relative my-8">
+        <div className="bg-[#FDFBF7] border-4 border-black shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] max-w-5xl w-full relative my-8">
           <div className={`w-full p-6 border-b-4 border-black flex justify-between items-center ${isGain ? 'bg-green-100' : 'bg-red-100'}`}>
             <div>
               <h2 className="text-3xl font-black uppercase tracking-tight">Round {lastRoundReport.roundId} Report</h2>
-              <p className="font-bold text-gray-600 text-sm uppercase tracking-widest">Results Processed</p>
+              <p className="font-bold text-gray-600 text-sm uppercase tracking-widest">Monthly Statement</p>
             </div>
             <div className="text-right">
                <div className="text-xs font-bold uppercase text-gray-500">Month P&L</div>
@@ -427,9 +522,6 @@ function App() {
               <h3 className="font-black text-lg uppercase mb-4 flex items-center gap-2">
                 <Briefcase size={20}/> Market Movements
               </h3>
-              <div className="bg-white border-2 border-black p-4 mb-4">
-                <p className="font-medium text-gray-800">"{lastRoundReport.newsHeadline}"</p>
-              </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                  {(Object.keys(lastRoundReport.marketReturns) as AssetType[]).filter(k => k !== AssetType.CASH).map(asset => (
                    <div key={asset} className="border border-black p-2 flex justify-between items-center bg-gray-50">
@@ -444,17 +536,18 @@ function App() {
 
             <div>
               <h3 className="font-black text-lg uppercase mb-4 flex items-center gap-2">
-                <TrendingUp size={20}/> Your Performance
+                <TrendingUp size={20}/> Financial Performance
               </h3>
               <div className="overflow-x-auto pb-2">
-                <table className="w-full text-sm border-collapse border-2 border-black min-w-[600px]">
+                <table className="w-full text-sm border-collapse border-2 border-black min-w-[700px]">
                   <thead>
                     <tr className="bg-black text-white uppercase text-xs tracking-wider">
                       <th className="p-3 text-left">Asset Class</th>
-                      <th className="p-3 text-right">Start Value</th>
-                      <th className="p-3 text-right">Your Action</th>
+                      <th className="p-3 text-right">Start</th>
+                      <th className="p-3 text-right">Net Flow</th>
+                      <th className="p-3 text-right">Fees/Tax</th>
                       <th className="p-3 text-right">Market P&L</th>
-                      <th className="p-3 text-right">Final Value</th>
+                      <th className="p-3 text-right">Final</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -463,20 +556,29 @@ function App() {
                       const action = lastRoundReport.allocations[type] || 0;
                       const pnl = lastRoundReport.assetPnL[type] || 0;
                       const end = lastRoundReport.portfolioEnd[type];
+                      const fee = lastRoundReport.transactionFees[type] || 0;
+                      const tax = lastRoundReport.taxes[type] || 0;
+                      const totalCost = fee + tax;
+                      
                       const isCash = type === AssetType.CASH;
-                      const displayAction = isCash 
-                        ? -((Object.values(lastRoundReport.allocations) as number[]).reduce((a,b)=>a+b,0))
+                      
+                      // For Cash row, flow is inverse of asset flows plus costs
+                      const displayFlow = isCash 
+                        ? -((Object.values(lastRoundReport.allocations) as number[]).reduce((a,b)=>a+b,0)) - ((Object.values(lastRoundReport.transactionFees) as number[]).reduce((a,b)=>a+b,0)) - ((Object.values(lastRoundReport.taxes) as number[]).reduce((a,b)=>a+b,0))
                         : action;
 
                       return (
                         <tr key={type} className="border-b border-black hover:bg-gray-50 font-mono">
                           <td className="p-3 font-bold text-gray-800 border-r border-gray-200">{ASSET_LABELS[type]}</td>
                           <td className="p-3 text-right text-gray-500">₹{start.toFixed(2)}</td>
-                          <td className={`p-3 text-right font-bold ${displayAction > 0 ? 'text-blue-600' : displayAction < 0 ? 'text-orange-600' : 'text-gray-300'}`}>
-                             {displayAction !== 0 ? (displayAction > 0 ? '+' : '') + displayAction.toFixed(2) : '-'}
+                          <td className={`p-3 text-right font-bold ${displayFlow > 0 ? 'text-blue-600' : displayFlow < 0 ? 'text-orange-600' : 'text-gray-300'}`}>
+                             {Math.abs(displayFlow) > 0.001 ? (displayFlow > 0 ? '+' : '') + displayFlow.toFixed(2) : '-'}
+                          </td>
+                          <td className="p-3 text-right text-red-600">
+                            {totalCost > 0 ? `-₹${totalCost.toFixed(2)}` : '-'}
                           </td>
                           <td className={`p-3 text-right font-bold ${pnl > 0 ? 'text-green-600' : pnl < 0 ? 'text-red-600' : 'text-gray-300'}`}>
-                             {pnl !== 0 ? (pnl > 0 ? '+' : '') + pnl.toFixed(2) : '-'}
+                             {Math.abs(pnl) > 0.001 ? (pnl > 0 ? '+' : '') + pnl.toFixed(2) : '-'}
                           </td>
                           <td className="p-3 text-right font-black border-l border-gray-200">₹{end.toFixed(2)}</td>
                         </tr>
@@ -486,6 +588,7 @@ function App() {
                       <td className="p-3 text-left uppercase">Totals</td>
                       <td className="p-3 text-right">₹{(Object.values(lastRoundReport.portfolioStart) as number[]).reduce((a,b)=>a+b,0).toFixed(2)}</td>
                       <td className="p-3 text-right text-gray-400">--</td>
+                      <td className="p-3 text-right text-red-600">-₹{((Object.values(lastRoundReport.transactionFees) as number[]).reduce((a,b)=>a+b,0) + (Object.values(lastRoundReport.taxes) as number[]).reduce((a,b)=>a+b,0)).toFixed(2)}</td>
                       <td className={`p-3 text-right ${lastRoundReport.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                          {lastRoundReport.totalPnL > 0 ? '+' : ''}{lastRoundReport.totalPnL.toFixed(2)}
                       </td>
@@ -508,8 +611,8 @@ function App() {
   };
 
   const renderGameOver = () => {
-    const totalReturn = ((gameState.nav - INITIAL_CASH) / INITIAL_CASH) * 100;
-    const benchmarkReturn = ((gameState.history[gameState.history.length-1].benchmark - INITIAL_CASH) / INITIAL_CASH) * 100;
+    const totalReturn = ((gameState.nav - INITIAL_FUND_SIZE) / INITIAL_FUND_SIZE) * 100;
+    const benchmarkReturn = ((gameState.history[gameState.history.length-1].benchmark - INITIAL_FUND_SIZE) / INITIAL_FUND_SIZE) * 100;
     const alpha = totalReturn - benchmarkReturn;
 
     return (
