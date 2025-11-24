@@ -26,7 +26,11 @@ import {
   Info,
   BookOpen,
   BarChart2,
-  X
+  X,
+  Globe,
+  Activity,
+  Percent,
+  Zap
 } from 'lucide-react';
 
 function App() {
@@ -273,17 +277,17 @@ function App() {
               <div className="text-4xl font-black mb-6 tracking-tighter uppercase text-[#DC2626]">India 2028 Simulation</div>
               
               <p className="text-xl font-medium text-gray-800 mb-8 leading-relaxed border-l-4 border-black pl-4">
-                <strong>Profile:</strong> IIM Trichy Grad (26/27).<br/>
+                <strong>Profile:</strong> IIM Trichy Graduate, Class of '28.<br/>
                 <strong>Role:</strong> Hedge Fund Manager, Mumbai.<br/>
                 <strong>Mission:</strong> Navigate the "Great Displacement" AI economy.
               </p>
               
               <div className="bg-[#FEF9C3] border-2 border-black p-6 mb-8">
                 <h3 className="font-black text-lg mb-2 uppercase">Current Portfolio Position (₹100 Cr)</h3>
-                <div className="grid grid-cols-4 gap-2 text-center text-sm font-bold">
+                <div className="grid grid-cols-5 gap-2 text-center text-sm font-bold">
                    <div className="p-2 bg-white border border-black">
                       <div className="text-gray-500">IND_EQ</div>
-                      <div>50%</div>
+                      <div>40%</div>
                    </div>
                    <div className="p-2 bg-white border border-black">
                       <div className="text-gray-500">US_EQ</div>
@@ -295,6 +299,10 @@ function App() {
                    </div>
                    <div className="p-2 bg-white border border-black">
                       <div className="text-gray-500">GOLD</div>
+                      <div>10%</div>
+                   </div>
+                   <div className="p-2 bg-white border border-black">
+                      <div className="text-gray-500">CASH</div>
                       <div>10%</div>
                    </div>
                 </div>
@@ -374,36 +382,31 @@ function App() {
           )}
 
           <Card title="Market Intelligence" accentColor="bg-blue-800" className="flex-grow flex flex-col min-h-[400px]">
-            <div className="flex-1 overflow-y-auto pr-4 font-sans text-base leading-relaxed">
-              <div className="whitespace-pre-wrap mb-6 font-medium border-l-4 border-[#1E3A8A] pl-4 py-1 text-gray-800">
-                {currentScenario.news}
-              </div>
+            <div className="flex-1 overflow-y-auto pr-4">
               
-              <div className="grid grid-cols-4 gap-4 mb-6">
+              {/* Macro Dashboard Stylized */}
+              <div className="grid grid-cols-4 gap-3 mb-8">
                 {[
-                  { label: 'GDP Growth', val: currentScenario.macro.gdp },
-                  { label: 'Repo Rate', val: currentScenario.macro.repo },
-                  { label: 'US CPI', val: currentScenario.macro.cpi },
-                  { label: 'VIX (Fear)', val: currentScenario.macro.vix, color: currentScenario.macro.vix > 20 ? 'text-red-600' : 'text-green-600' }
+                  { label: 'GDP', val: currentScenario.macro.gdp, icon: <Globe size={14}/>, color: 'bg-blue-100', text: 'text-blue-900', border: 'border-blue-900' },
+                  { label: 'Repo', val: currentScenario.macro.repo, icon: <Percent size={14}/>, color: 'bg-yellow-100', text: 'text-yellow-900', border: 'border-yellow-900' },
+                  { label: 'CPI', val: currentScenario.macro.cpi, icon: <Activity size={14}/>, color: 'bg-red-100', text: 'text-red-900', border: 'border-red-900' },
+                  { label: 'VIX', val: currentScenario.macro.vix, icon: <Zap size={14}/>, color: 'bg-purple-100', text: 'text-purple-900', border: 'border-purple-900' }
                 ].map((m, i) => (
-                  <div key={i} className="bg-gray-50 border-2 border-black p-3 text-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <div className="text-[10px] uppercase font-black text-gray-500 mb-1">{m.label}</div>
-                    <div className={`text-xl font-black ${m.color || 'text-black'}`}>{m.val}</div>
+                  <div key={i} className={`${m.color} border-2 border-black p-3 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between h-24`}>
+                    <div className={`flex justify-between items-start ${m.text}`}>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{m.label}</span>
+                        {m.icon}
+                    </div>
+                    <div className={`text-lg font-black leading-none ${m.text}`}>{m.val}</div>
                   </div>
                 ))}
               </div>
-              
-              <div className="space-y-4 bg-gray-50 p-4 border border-black">
-                 <div className="flex gap-3">
-                   <div className="min-w-[60px] font-black text-green-700 uppercase text-sm">Bull Case</div>
-                   <div className="text-gray-700 font-medium italic">"{currentScenario.analyst.bull}"</div>
-                 </div>
-                 <div className="w-full h-px bg-gray-300"></div>
-                 <div className="flex gap-3">
-                   <div className="min-w-[60px] font-black text-red-700 uppercase text-sm">Bear Case</div>
-                   <div className="text-gray-700 font-medium italic">"{currentScenario.analyst.bear}"</div>
-                 </div>
+
+              {/* News Report with larger font */}
+              <div className="whitespace-pre-wrap font-medium text-lg leading-relaxed text-gray-800 text-justify">
+                {currentScenario.news}
               </div>
+
             </div>
           </Card>
         </div>
