@@ -25,7 +25,7 @@ export const ASSET_LABELS: Record<AssetType, string> = {
 export const SCENARIO_DATA: ScenarioRound[] = [
   {
     id: 1,
-    title: "The \"Zero Marginal Cost\" Mirage",
+    title: "The \"Zero Marginal Cost\" Era",
     news: "Intel Report: The global markets have entered a phase of euphoric dislocation dubbed the \"Zero Marginal Cost\" era. Silicon Valley giant 'Omni-Compute' stunned Wall Street this quarter, reporting a 40% surge in Net Income despite completely flat top-line revenues. The driver? A ruthless \"hyper-automation\" program that saw 15% of its mid-level workforce—primarily in coding, QA, and middle management—replaced by proprietary autonomous agents. The CEO, in a leaked internal memo, described this not as a layoff, but as \"shedding the biological friction to scale.\"\n\nThis narrative has ignited a firestorm of speculation. Analysts are aggressively upgrading price targets for the entire tech sector, extrapolating Omni-Compute's margin expansion to every software company in the S&P 500. The thesis is seductive: if the marginal cost of intelligence goes to zero, profit margins expand to infinity. In India, the reverberations are immediate but paradoxical. The IT services giants, historically the largest employers of engineering talent, have announced a shocking \"strategic hiring freeze.\" Campus recruitment has dropped to near zero. However, their stock prices are resilient, even rising, as they announce record deal wins from Fortune 500 firms rushing to outsource their own AI implementation layers. The market is pricing in a massive efficiency boom for Indian IT, ignoring the labor market implications.\n\nMeanwhile, the bond market is behaving strangely. Typically, such a tech boom would spike yields due to growth expectations. Instead, yields are flat. The narrative taking hold is that this tech wave is inherently deflationary—a massive counterweight to consumer demand. Capital is flooding into equities, convinced that we have unlocked a cheat code for perpetual profit growth without inflation.",
     macro: { gdp: '7.2% (Steady)', repo: '6.5%', cpi: '2.1% (Ideal)', vix: 12 },
     analyst: {
@@ -44,7 +44,7 @@ export const SCENARIO_DATA: ScenarioRound[] = [
       bull: "Supply constraints equal pricing power. Tech giants will pass these costs to customers. The real story is the manufacturing super-cycle in India. Buy Industrials and EMS players.",
       bear: "You can't automate if you can't compute. Hardware shortages will stall the AI rollout for a year. Tech valuations are too high for a supply-constrained world."
     },
-    returns: { [AssetType.US_EQ]: -0.01, [AssetType.IND_EQ]: 0.05, [AssetType.G_SEC]: -0.005, [AssetType.GOLD]: 0.00, [AssetType.CASH]: 0 },
+    returns: { [AssetType.US_EQ]: -0.01, [AssetType.IND_EQ]: 0.04, [AssetType.G_SEC]: -0.005, [AssetType.GOLD]: 0.00, [AssetType.CASH]: 0 },
     explanation: "A classic divergence. US Tech stalled because their growth model (unlimited AI scaling) hit a bottleneck, raising their input costs (chips). Indian Manufacturing exploded because the supply chain crisis forced global capital to diversify into India. Low oil prices further boosted Indian equity sentiment by improving the macro balance sheet."
   },
   {
@@ -56,7 +56,7 @@ export const SCENARIO_DATA: ScenarioRound[] = [
       bull: "Fewer employees means higher margins. The market cares about profits, not jobs. The 'efficiency' narrative is still intact.",
       bear: "Consumption drives 70% of US GDP. If the six-figure earners lose their jobs, who buys the AI subscriptions? Who buys the iPhones? The demand cliff is approaching."
     },
-    returns: { [AssetType.US_EQ]: 0.02, [AssetType.IND_EQ]: -0.01, [AssetType.G_SEC]: 0.01, [AssetType.GOLD]: 0.02, [AssetType.CASH]: 0 },
+    returns: { [AssetType.US_EQ]: 0.01, [AssetType.IND_EQ]: -0.01, [AssetType.G_SEC]: 0.01, [AssetType.GOLD]: 0.02, [AssetType.CASH]: 0 },
     explanation: "The \"Bad News is Good News\" paradox. Algorithms bought the margin expansion story (US-EQ Up), ignoring the long-term demand destruction. However, the smart money started hedging with Gold and Bonds (pushing yields down/prices up) because they anticipate a consumption bust. India dipped because a slowing US consumer hurts Indian IT and export sectors."
   },
   {
@@ -68,7 +68,7 @@ export const SCENARIO_DATA: ScenarioRound[] = [
       bull: "The bot issue is fixable with verification layers. The underlying tech is real. This is a generational buy-the-dip opportunity.",
       bear: "Valuations are based on exponential user growth. If users are fake, the models are worthless. This is the Dot-com bubble 2.0. Get out now."
     },
-    returns: { [AssetType.US_EQ]: -0.08, [AssetType.IND_EQ]: -0.04, [AssetType.G_SEC]: 0.02, [AssetType.GOLD]: 0.03, [AssetType.CASH]: 0 },
+    returns: { [AssetType.US_EQ]: -0.06, [AssetType.IND_EQ]: -0.03, [AssetType.G_SEC]: 0.02, [AssetType.GOLD]: 0.03, [AssetType.CASH]: 0 },
     explanation: "Fraud + Deflation = Toxicity. Equities crashed primarily on the fraud rumor; if the \"E\" in P/E is fake, prices must collapse. Bonds rallied (yields fell) because deflation is great for fixed income (real yields rise) and investors fled risky stocks for safe government debt. Gold rose as a hedge against systemic chaos."
   },
   {
@@ -80,7 +80,7 @@ export const SCENARIO_DATA: ScenarioRound[] = [
       bull: "This is capitulation. The assets are good, the balance sheets are the problem. Fed will have to step in.",
       bear: "Credit freeze means bankruptcy. Even good companies will fail if they can't roll over debt. Cash is the only safe asset."
     },
-    returns: { [AssetType.US_EQ]: -0.12, [AssetType.IND_EQ]: -0.06, [AssetType.G_SEC]: 0.01, [AssetType.GOLD]: 0.04, [AssetType.CASH]: 0 },
+    returns: { [AssetType.US_EQ]: -0.08, [AssetType.IND_EQ]: -0.06, [AssetType.G_SEC]: 0.01, [AssetType.GOLD]: 0.04, [AssetType.CASH]: 0 },
     explanation: "Liquidity Crisis. High-beta assets (Tech) get slaughtered as leverage is unwound. Emerging Markets (India) are sold indiscriminately not because they are bad, but because they are liquid. Gold shines as the ultimate safe haven when the banking system itself looks shaky."
   },
   {
@@ -92,7 +92,7 @@ export const SCENARIO_DATA: ScenarioRound[] = [
       bull: "Deflation is here. Central Banks have no choice but to print money. The bottom is in. Buy the wreckage.",
       bear: "Earnings will be negative for a year. Why buy now? Wait for the actual policy pivot. Don't catch a falling knife."
     },
-    returns: { [AssetType.US_EQ]: -0.02, [AssetType.IND_EQ]: -0.02, [AssetType.G_SEC]: 0.03, [AssetType.GOLD]: 0.01, [AssetType.CASH]: 0 },
+    returns: { [AssetType.US_EQ]: -0.03, [AssetType.IND_EQ]: -0.02, [AssetType.G_SEC]: 0.03, [AssetType.GOLD]: 0.01, [AssetType.CASH]: 0 },
     explanation: "Bottoming. The crash slowed down because the sellers are exhausted. Bonds rallied hard (prices up, yields down) because deflation + recession guarantees that interest rate cuts are imminent. Smart money accumulates bonds before the rate cut actually happens."
   },
   {
