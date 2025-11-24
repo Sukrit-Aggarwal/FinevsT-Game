@@ -12,7 +12,10 @@ import {
   SELL_LIMIT_AMOUNT,
   SCENARIO_DATA,
   ASSET_LABELS,
-  INITIAL_PORTFOLIO_CONFIG
+  INITIAL_PORTFOLIO_CONFIG,
+  MONTHLY_RISK_FREE_RATE,
+  SHARPE_ANNUALIZATION_FACTOR,
+  EDUCATIONAL_MODULES
 } from './constants';
 import { Card } from './components/Card';
 import { Button } from './components/Button';
@@ -22,6 +25,7 @@ import {
   AlertTriangle, 
   Briefcase, 
   TrendingUp,
+  TrendingDown,
   ArrowRight,
   Info,
   BookOpen,
@@ -30,7 +34,11 @@ import {
   Globe,
   Activity,
   Percent,
-  Zap
+  Zap,
+  Target,
+  HelpCircle,
+  Coins,
+  Scale
 } from 'lucide-react';
 
 function App() {
@@ -42,7 +50,8 @@ function App() {
     costBasis: { ...INITIAL_PORTFOLIO_CONFIG }, // Initial Basis = Initial Value
     nav: INITIAL_FUND_SIZE,
     history: [{ round: 0, nav: INITIAL_FUND_SIZE, benchmark: INITIAL_FUND_SIZE }],
-    lastRoundReturn: 0
+    lastRoundReturn: 0,
+    monthlyReturns: []
   });
 
   const [allocations, setAllocations] = useState<Record<string, number>>({
@@ -55,6 +64,7 @@ function App() {
   const [lastRoundReport, setLastRoundReport] = useState<RoundReport | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showGraph, setShowGraph] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   // --- CALCULATIONS & LOGIC ---
 
@@ -228,7 +238,8 @@ function App() {
         costBasis: newCostBasis,
         nav: newNav,
         history: [...prev.history, { round: prev.currentRound, nav: newNav, benchmark: newBenchmark }],
-        lastRoundReturn: navChangePct
+        lastRoundReturn: navChangePct,
+        monthlyReturns: [...prev.monthlyReturns, navChangePct]
       }));
 
       setIsProcessing(false);
@@ -265,8 +276,60 @@ function App() {
     return [Math.max(0, min - buffer), max + buffer];
   };
 
+  const renderHelpModal = () => {
+    if (!showHelp) return null;
+    return (
+      <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
+        <div className="bg-[#FDFBF7] border-4 border-black shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] max-w-3xl w-full relative max-h-[85vh] overflow-y-auto">
+          <div className="bg-yellow-400 p-4 border-b-4 border-black flex justify-between items-center sticky top-0 z-10">
+            <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2">
+              <BookOpen size={24}/> Finance Knowledge Base
+            </h2>
+            <button onClick={() => setShowHelp(false)} className="hover:bg-white p-1 rounded border-2 border-transparent hover:border-black transition-all">
+              <X size={24} />
+            </button>
+          </div>
+          
+          <div className="p-8 grid gap-6">
+            {EDUCATIONAL_MODULES.map((module, i) => (
+              <div key={i} className="flex gap-4 items-start">
+                <div className="text-4xl bg-white border-2 border-black w-16 h-16 flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shrink-0">
+                  {module.icon === 'macro' ? <Globe size={32}/> : 
+                   module.icon === 'bonds' ? <Scale size={32}/> : 
+                   module.icon === 'equities' ? <BarChart2 size={32}/> : 
+                   module.icon === 'gold' ? <Coins size={32}/> : 
+                   module.icon === 'sharpe' ? <Target size={32}/> :
+                   <Info size={32}/>}
+                </div>
+                <div>
+                  <h3 className="font-black text-lg uppercase mb-1">{module.title}</h3>
+                  <p className="text-gray-700 font-medium leading-relaxed text-sm whitespace-pre-wrap">
+                    {module.content}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="p-4 bg-gray-100 border-t-4 border-black text-center">
+            <Button onClick={() => setShowHelp(false)} variant="secondary" className="text-sm">Close Guide</Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderIntro = () => (
     <div className="min-h-screen flex flex-col relative">
+      <div className="absolute top-6 right-6 z-20">
+         <button 
+           onClick={() => setShowHelp(true)}
+           className="flex items-center gap-2 bg-yellow-400 border-2 border-black px-4 py-2 font-bold uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none transition-all"
+         >
+           <Info size={18}/> Guide
+         </button>
+      </div>
+
       <div className="flex-grow flex items-center justify-center p-4">
         <div className="max-w-3xl w-full">
           <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-10 relative overflow-hidden">
@@ -277,7 +340,7 @@ function App() {
               <div className="text-4xl font-black mb-6 tracking-tighter uppercase text-[#DC2626]">India 2028 Simulation</div>
               
               <p className="text-xl font-medium text-gray-800 mb-8 leading-relaxed border-l-4 border-black pl-4">
-                <strong>Profile:</strong> IIM Trichy Graduate, Class of '28.<br/>
+                <strong>Profile:</strong> IIM Trichy Graduate, Class of '26/27.<br/>
                 <strong>Role:</strong> Hedge Fund Manager, Mumbai.<br/>
                 <strong>Mission:</strong> Navigate the "Great Displacement" AI economy.
               </p>
@@ -314,6 +377,7 @@ function App() {
                    <li><strong>Liquidity Lock:</strong> Max Sell ₹{SELL_LIMIT_AMOUNT} Cr per asset/month.</li>
                    <li><strong>Transaction Fee:</strong> 1% on Equity Buy/Sell.</li>
                    <li><strong>Taxes:</strong> 10% on Ind Eq Profits, 15% on US Eq Profits (realized on sell).</li>
+                   <li><strong>Evaluation:</strong> Final Score based on Sharpe Ratio (Risk-Adjusted Returns).</li>
                 </ul>
               </div>
 
@@ -349,12 +413,20 @@ function App() {
                 <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Total Fund Value (NAV)</div>
                 <div className="text-5xl font-black font-mono tracking-tighter text-[#1E3A8A]">₹{gameState.nav.toFixed(2)} Cr</div>
             </div>
-            <button 
-                onClick={() => setShowGraph(!showGraph)}
-                className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest border-2 border-black px-3 py-1 hover:bg-black hover:text-white transition-colors"
-            >
-                <BarChart2 size={14} /> {showGraph ? 'Hide Performance' : 'Show Performance'}
-            </button>
+            <div className="flex gap-2">
+              <button 
+                  onClick={() => setShowHelp(true)}
+                  className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest bg-yellow-400 border-2 border-black px-3 py-1 hover:bg-yellow-500 transition-colors"
+              >
+                  <HelpCircle size={14} /> Guide
+              </button>
+              <button 
+                  onClick={() => setShowGraph(!showGraph)}
+                  className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest border-2 border-black px-3 py-1 hover:bg-black hover:text-white transition-colors"
+              >
+                  <BarChart2 size={14} /> {showGraph ? 'Hide Performance' : 'Show Performance'}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -614,54 +686,109 @@ function App() {
   };
 
   const renderGameOver = () => {
+    // Basic Returns
     const totalReturn = ((gameState.nav - INITIAL_FUND_SIZE) / INITIAL_FUND_SIZE) * 100;
     const benchmarkReturn = ((gameState.history[gameState.history.length-1].benchmark - INITIAL_FUND_SIZE) / INITIAL_FUND_SIZE) * 100;
     const alpha = totalReturn - benchmarkReturn;
 
+    // Sharpe Ratio Calculation
+    const returns = gameState.monthlyReturns;
+    const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+    
+    // Standard Deviation
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+    const stdDev = Math.sqrt(variance);
+    
+    // Monthly Sharpe = (Avg Return - Risk Free) / StdDev
+    const monthlySharpe = stdDev === 0 ? 0 : (avgReturn - MONTHLY_RISK_FREE_RATE) / stdDev;
+    
+    // Annualized Sharpe = Monthly Sharpe * sqrt(12)
+    const annualizedSharpe = monthlySharpe * SHARPE_ANNUALIZATION_FACTOR;
+
     return (
       <div className="min-h-screen bg-[#FDFBF7] p-8">
-        <div className="max-w-5xl mx-auto">
-          <Card title="FY 2029 Performance Review" className="text-center p-10">
-            <div className="flex justify-center mb-8">
-               <Briefcase size={80} strokeWidth={1} className="text-black" />
+        <div className="max-w-6xl mx-auto">
+          <Card title="FY 2029 Performance Evaluation" className="text-center p-10">
+            <div className="flex justify-center mb-6">
+               <Target size={60} strokeWidth={1.5} className="text-black" />
             </div>
             
-            <h1 className="text-6xl font-black uppercase mb-4">Simulation Complete</h1>
-            <p className="text-xl text-gray-600 font-medium mb-12">The fiscal year has closed. Analyzing your Alpha generation...</p>
+            <h1 className="text-5xl font-black uppercase mb-2">Simulation Complete</h1>
+            <p className="text-lg text-gray-500 font-medium mb-10">Analyzing risk-adjusted returns and volatility...</p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-              <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 transition-transform">
-                <div className="text-sm font-bold text-gray-500 uppercase mb-2">Your Total Return</div>
-                <div className={`text-5xl font-mono font-black ${totalReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {/* Top Metrics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+              <div className="bg-white border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                <div className="text-xs font-bold text-gray-400 uppercase mb-2">Total Return</div>
+                <div className={`text-4xl font-mono font-black ${totalReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {totalReturn > 0 ? '+' : ''}{totalReturn.toFixed(1)}%
                 </div>
               </div>
-              <div className="bg-gray-50 border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                 <div className="text-sm font-bold text-gray-500 uppercase mb-2">Benchmark (Nifty 100)</div>
-                 <div className="text-5xl font-mono font-black text-gray-400">
+              <div className="bg-white border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                 <div className="text-xs font-bold text-gray-400 uppercase mb-2">Benchmark Return</div>
+                 <div className="text-4xl font-mono font-black text-gray-800">
                   {benchmarkReturn > 0 ? '+' : ''}{benchmarkReturn.toFixed(1)}%
                 </div>
               </div>
-              <div className="bg-[#1E3A8A] border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-white relative overflow-hidden">
-                 <div className="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-                 <div className="text-sm font-bold text-blue-200 uppercase mb-2">Alpha Generated</div>
+              <div className="bg-white border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                 <div className="text-xs font-bold text-gray-400 uppercase mb-2">Volatility (StdDev)</div>
+                 <div className="text-4xl font-mono font-black text-gray-800">
+                   {stdDev.toFixed(2)}%
+                </div>
+              </div>
+              {/* SHARPE HERO CARD */}
+              <div className="bg-[#1E3A8A] border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-white relative overflow-hidden group">
+                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full group-hover:scale-150 transition-transform"></div>
+                 <div className="text-xs font-bold text-blue-200 uppercase mb-2 flex items-center gap-1">
+                    <Activity size={12}/> Annualized Sharpe
+                 </div>
                  <div className="text-5xl font-mono font-black relative z-10">
-                  {alpha > 0 ? '+' : ''}{alpha.toFixed(1)}%
+                  {annualizedSharpe.toFixed(2)}
                 </div>
               </div>
             </div>
 
-            <div className="h-[400px] w-full border-4 border-black p-4 mb-10 bg-white">
-               <ResponsiveContainer width="100%" height="100%">
-                 <LineChart data={gameState.history} margin={{top: 20, right: 30, left: 20, bottom: 5}}>
-                   <XAxis dataKey="round" stroke="#000" tick={{fontWeight: 'bold'}} />
-                   <YAxis domain={getGraphDomain()} stroke="#000" tick={{fontWeight: 'bold'}} />
-                   <Tooltip contentStyle={{border: '2px solid black', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}/>
-                   <Legend verticalAlign="top" height={36}/>
-                   <Line name="Alpha Fund" type="monotone" dataKey="nav" stroke="#1E3A8A" strokeWidth={4} dot={{r:4}} activeDot={{r:8}} />
-                   <Line name="Benchmark" type="monotone" dataKey="benchmark" stroke="#9CA3AF" strokeWidth={3} strokeDasharray="5 5" />
-                 </LineChart>
-               </ResponsiveContainer>
+            {/* Sharpe Calculation Explanation */}
+            <div className="bg-gray-100 border-2 border-black p-6 mb-10 text-left font-mono text-sm">
+                <h3 className="font-bold text-gray-500 uppercase mb-3 text-xs tracking-widest">Sharpe Calculation Breakdown</h3>
+                <div className="flex flex-col md:flex-row md:items-center gap-4 text-gray-800">
+                    <div className="bg-white px-3 py-2 border border-black">
+                        Sharpe = [(Avg Return - Risk Free) / StdDev] × √12
+                    </div>
+                    <ArrowRight className="hidden md:block text-gray-400" size={16}/>
+                    <div className="bg-white px-3 py-2 border border-black font-bold">
+                        [({avgReturn.toFixed(2)}% - {MONTHLY_RISK_FREE_RATE.toFixed(1)}%) / {stdDev.toFixed(2)}%] × 3.46 = {annualizedSharpe.toFixed(2)}
+                    </div>
+                </div>
+            </div>
+
+            {/* Monthly Track Record Table */}
+            <div className="mb-10">
+                <h3 className="text-left font-black uppercase text-lg mb-4 flex items-center gap-2">
+                    <BarChart2 size={20}/> Monthly Track Record
+                </h3>
+                <div className="overflow-x-auto border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="bg-black text-white">
+                                {gameState.monthlyReturns.map((_, i) => (
+                                    <th key={i} className="p-3 text-center border-r border-gray-700 min-w-[60px]">
+                                        M{i+1}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr className="bg-white">
+                                {gameState.monthlyReturns.map((ret, i) => (
+                                    <td key={i} className={`p-4 text-center font-mono font-bold border-r border-gray-200 ${ret > 0 ? 'text-green-600' : ret < 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                                        {ret > 0 ? '+' : ''}{ret.toFixed(1)}%
+                                    </td>
+                                ))}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <Button onClick={() => window.location.reload()} className="text-xl px-12 py-4">
@@ -680,6 +807,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-black font-sans selection:bg-yellow-200">
+      {renderHelpModal()}
       {gameState.phase === 'INTRO' && renderIntro()}
       {(gameState.phase === 'STRATEGY' || gameState.phase === 'EXECUTING' || gameState.phase === 'RESULT') && renderDashboard()}
       {gameState.phase === 'EXECUTING' && renderProcessing()}
