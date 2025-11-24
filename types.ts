@@ -33,6 +33,7 @@ export interface GameState {
   nav: number;
   history: Array<{ round: number; nav: number; benchmark: number }>;
   lastRoundReturn: number;
+  monthlyReturns: number[]; // Array of percentage returns for each round
 }
 
 export interface RoundReport {
