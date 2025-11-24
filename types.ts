@@ -17,10 +17,6 @@ export interface ScenarioRound {
     cpi: string;
     vix: number;
   };
-  analyst: {
-    bull: string;
-    bear: string;
-  };
   returns: {
     [key in AssetType]?: number; // Percentage as decimal (e.g. 0.05 for 5%)
   };
