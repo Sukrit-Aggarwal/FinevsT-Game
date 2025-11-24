@@ -4,6 +4,8 @@ import { AssetType, ScenarioRound, Portfolio } from './types';
 export const INITIAL_FUND_SIZE = 100; // 100 Crores Total
 export const MAX_ROUNDS = 12;
 export const SELL_LIMIT_AMOUNT = 25; // 25 Crores fixed selling limit per round
+export const MONTHLY_RISK_FREE_RATE = 0.5; // 0.5% Monthly Risk Free Rate (~6% Annual)
+export const SHARPE_ANNUALIZATION_FACTOR = 3.464; // Square root of 12
 
 // Starting allocation: Ind: 40, US: 20, Debt: 20, Gold: 10, Cash: 10
 export const INITIAL_PORTFOLIO_CONFIG: Portfolio = {
@@ -21,6 +23,34 @@ export const ASSET_LABELS: Record<AssetType, string> = {
   [AssetType.GOLD]: 'Gold (XAU)',
   [AssetType.CASH]: 'Cash (INR)'
 };
+
+export const EDUCATIONAL_MODULES = [
+  {
+    title: "1. Macro Basics: Inflation & Rates",
+    icon: "macro",
+    content: "The economy is a cycle. When 'Inflation' (prices) rises, Central Banks (Fed/RBI) raise 'Interest Rates'. \n\n• High Rates = Expensive loans -> Companies grow slower -> Stocks Down -> Inflation Cools.\n• Low Rates = Cheap money -> Companies expand -> Stocks Up -> Risk of Inflation.\n\nWatch the CPI (Inflation) and Repo (Rates) data closely."
+  },
+  {
+    title: "2. The Bond Seesaw (Critical)",
+    icon: "bonds",
+    content: "Bonds are loans to the government. They have an INVERSE relationship with Interest Rates.\n\n• If Rates/Yields Go UP -> Bond Prices Go DOWN.\n• If Rates/Yields Go DOWN -> Bond Prices Go UP.\n\nIf you expect a Recession (Rates cut), Buy Bonds. If you expect Inflation (Rates hike), Sell Bonds."
+  },
+  {
+    title: "3. Equities: Growth vs. Valuation",
+    icon: "equities",
+    content: "Stocks represent future earnings.\n\n• US Tech (Nasdaq): High Risk/High Reward. Very sensitive to rates. High rates hurt tech valuations deeply.\n• India (Nifty): Driven by manufacturing and domestic consumption. Needs foreign capital (FII) flows to rally. If the US dollar gets too strong, money leaves India."
+  },
+  {
+    title: "4. Gold: The Panic Button",
+    icon: "gold",
+    content: "Gold pays no interest and produces nothing. It is a 'Store of Value'.\n\nInvestors buy Gold when they are scared of:\n1. Currency Collapse (Printing too much money/UBI).\n2. Crisis (War, Fraud, Bank Runs).\n3. Stagflation (High Inflation + Low Growth)."
+  },
+  {
+    title: "5. The Objective: Sharpe Ratio",
+    icon: "sharpe",
+    content: "You are not judged on 'Total Return' alone. You are judged on 'Smoothness'.\n\nFormula: (Return - Risk Free Rate) / Volatility\n\nA fund that makes 20% with wild 10% swings is worse than a fund that makes 15% with steady 1% growth. To win, manage your risk (Standard Deviation). Don't just gamble."
+  }
+];
 
 export const SCENARIO_DATA: ScenarioRound[] = [
   {
