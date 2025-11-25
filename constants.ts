@@ -5,7 +5,7 @@ export const INITIAL_FUND_SIZE = 100; // 100 Crores Total
 export const MAX_ROUNDS = 12;
 export const SELL_LIMIT_AMOUNT = 25; // 25 Crores fixed selling limit per round
 export const MONTHLY_RISK_FREE_RATE = 0.5; // 0.5% Monthly Risk Free Rate (~6% Annual)
-export const SHARPE_ANNUALIZATION_FACTOR = 3.464; // Square root of 12
+export const SHARPE_ANNUALIZATION_FACTOR = 3.46; // Square root of 12 (approx)
 
 // Starting allocation: Ind: 40, US: 20, Debt: 20, Gold: 10, Cash: 10
 export const INITIAL_PORTFOLIO_CONFIG: Portfolio = {
@@ -48,7 +48,7 @@ export const EDUCATIONAL_MODULES = [
   {
     title: "5. The Objective: Sharpe Ratio",
     icon: "sharpe",
-    content: "You are not judged on 'Total Return' alone. You are judged on 'Smoothness'.\n\nFormula: (Return - Risk Free Rate) / Volatility\n\nA fund that makes 20% with wild 10% swings is worse than a fund that makes 15% with steady 1% growth. To win, manage your risk (Standard Deviation). Don't just gamble."
+    content: "You are not judged on 'Total Return' alone. You are judged on 'Risk-Adjusted Return'.\n\nFormula: (Total Annual Return - 0.065) / (Monthly Std Dev × 3.46)\n\nThis metric penalizes volatility. A fund that makes 20% with wild swings is worse than a fund that makes 15% with steady growth. Aim for a high numerator (Return) and low denominator (Volatility)."
   }
 ];
 
