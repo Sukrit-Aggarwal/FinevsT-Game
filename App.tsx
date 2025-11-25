@@ -689,21 +689,28 @@ function App() {
     // Basic Returns
     const totalReturn = ((gameState.nav - INITIAL_FUND_SIZE) / INITIAL_FUND_SIZE) * 100;
     const benchmarkReturn = ((gameState.history[gameState.history.length-1].benchmark - INITIAL_FUND_SIZE) / INITIAL_FUND_SIZE) * 100;
-    const alpha = totalReturn - benchmarkReturn;
-
-    // Sharpe Ratio Calculation
-    const returns = gameState.monthlyReturns;
+    
+    // Sharpe Ratio Calculation based on user request:
+    // Formula: (Total Annual Return - 0.065) / (Monthly Std Dev * 3.46)
+    // We treat "Total Annual Return" and "Monthly Std Dev" as decimals here to match the 0.065 scalar.
+    
+    const returns = gameState.monthlyReturns; // Array of percentages, e.g. [2.5, -1.0, ...]
     const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
     
-    // Standard Deviation
+    // Standard Deviation of monthly returns (Percentage)
     const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
-    const stdDev = Math.sqrt(variance);
+    const stdDevPct = Math.sqrt(variance);
     
-    // Monthly Sharpe = (Avg Return - Risk Free) / StdDev
-    const monthlySharpe = stdDev === 0 ? 0 : (avgReturn - MONTHLY_RISK_FREE_RATE) / stdDev;
+    // Convert to Decimals for the User Formula
+    const totalReturnDecimal = totalReturn / 100;
+    const stdDevDecimal = stdDevPct / 100;
     
-    // Annualized Sharpe = Monthly Sharpe * sqrt(12)
-    const annualizedSharpe = monthlySharpe * SHARPE_ANNUALIZATION_FACTOR;
+    const riskFreeRate = 0.065;
+    
+    const sharpeNumerator = totalReturnDecimal - riskFreeRate;
+    const sharpeDenominator = stdDevDecimal * SHARPE_ANNUALIZATION_FACTOR;
+    
+    const annualizedSharpe = sharpeDenominator === 0 ? 0 : sharpeNumerator / sharpeDenominator;
 
     return (
       <div className="min-h-screen bg-[#FDFBF7] p-8">
@@ -733,7 +740,7 @@ function App() {
               <div className="bg-white border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
                  <div className="text-xs font-bold text-gray-400 uppercase mb-2">Volatility (StdDev)</div>
                  <div className="text-4xl font-mono font-black text-gray-800">
-                   {stdDev.toFixed(2)}%
+                   {stdDevPct.toFixed(2)}%
                 </div>
               </div>
               {/* SHARPE HERO CARD */}
@@ -753,12 +760,15 @@ function App() {
                 <h3 className="font-bold text-gray-500 uppercase mb-3 text-xs tracking-widest">Sharpe Calculation Breakdown</h3>
                 <div className="flex flex-col md:flex-row md:items-center gap-4 text-gray-800">
                     <div className="bg-white px-3 py-2 border border-black">
-                        Sharpe = [(Avg Return - Risk Free) / StdDev] × √12
+                        Sharpe = (Total Return - 0.065) / (Monthly Std Dev × {SHARPE_ANNUALIZATION_FACTOR})
                     </div>
                     <ArrowRight className="hidden md:block text-gray-400" size={16}/>
                     <div className="bg-white px-3 py-2 border border-black font-bold">
-                        [({avgReturn.toFixed(2)}% - {MONTHLY_RISK_FREE_RATE.toFixed(1)}%) / {stdDev.toFixed(2)}%] × 3.46 = {annualizedSharpe.toFixed(2)}
+                        ({totalReturnDecimal.toFixed(3)} - 0.065) / ({stdDevDecimal.toFixed(3)} × {SHARPE_ANNUALIZATION_FACTOR}) = {annualizedSharpe.toFixed(2)}
                     </div>
+                </div>
+                <div className="mt-2 text-xs text-gray-500 italic">
+                  *Calculated using decimal values (e.g., 15% = 0.15)
                 </div>
             </div>
 
