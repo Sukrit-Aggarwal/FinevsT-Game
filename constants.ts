@@ -31,7 +31,7 @@ export const EDUCATIONAL_MODULES = [
     content: "The economy is a cycle. When 'Inflation' (prices) rises, Central Banks (Fed/RBI) raise 'Interest Rates'. \n\n• High Rates = Expensive loans -> Companies grow slower -> Stocks Down -> Inflation Cools.\n• Low Rates = Cheap money -> Companies expand -> Stocks Up -> Risk of Inflation.\n\nWatch the CPI (Inflation) and Repo (Rates) data closely."
   },
   {
-    title: "2. The Bond Seesaw (Critical)",
+    title: "2. The Sovereign Bond Seesaw",
     icon: "bonds",
     content: "Bonds are loans to the government. They have an INVERSE relationship with Interest Rates.\n\n• If Rates/Yields Go UP -> Bond Prices Go DOWN.\n• If Rates/Yields Go DOWN -> Bond Prices Go UP.\n\nIf you expect a Recession (Rates cut), Buy Bonds. If you expect Inflation (Rates hike), Sell Bonds."
   },
@@ -43,12 +43,12 @@ export const EDUCATIONAL_MODULES = [
   {
     title: "4. Gold: The Panic Button",
     icon: "gold",
-    content: "Gold pays no interest and produces nothing. It is a 'Store of Value'.\n\nInvestors buy Gold when they are scared of:\n1. Currency Collapse (Printing too much money/UBI).\n2. Crisis (War, Fraud, Bank Runs).\n3. Stagflation (High Inflation + Low Growth)."
+    content: "Gold pays no interest and produces nothing. It is a 'Store of Value', though its price fluctuates based on market demand and supply.\n\nInvestors buy Gold when they are scared of:\n1. Currency Collapse (Printing too much money/UBI).\n2. Crisis (War, Fraud, Bank Runs).\n3. Stagflation (High Inflation + Low Growth)."
   },
   {
-    title: "5. The Objective: Sharpe Ratio",
-    icon: "sharpe",
-    content: "You are not judged on 'Total Return' alone. You are judged on 'Risk-Adjusted Return'.\n\nFormula: (Total Annual Return - 0.065) / (Monthly Std Dev × 3.46)\n\nThis metric penalizes volatility. A fund that makes 20% with wild swings is worse than a fund that makes 15% with steady growth. Aim for a high numerator (Return) and low denominator (Volatility)."
+    title: "5. The Objective: Absolute Return",
+    icon: "target",
+    content: "Your goal is simple: MAXIMIZE ABSOLUTE RETURNS.\n\nNavigate the volatility, protect your capital during crashes, and go aggressive during booms. The fund manager with the highest Final NAV (Net Asset Value) wins.\n\nSharpe Ratio is secondary; Cash Flow is King."
   }
 ];
 
