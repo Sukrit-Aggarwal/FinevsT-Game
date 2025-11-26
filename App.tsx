@@ -36,12 +36,14 @@ import {
   Target,
   HelpCircle,
   Coins,
-  Scale
+  Scale,
+  User
 } from 'lucide-react';
 
 function App() {
   // --- STATE ---
   const [gameState, setGameState] = useState<GameState>({
+    teamName: '',
     currentRound: 0,
     phase: 'INTRO',
     portfolio: { ...INITIAL_PORTFOLIO_CONFIG },
@@ -165,6 +167,7 @@ function App() {
   // --- ACTIONS ---
 
   const startGame = () => {
+    if (!gameState.teamName.trim()) return;
     setGameState(prev => ({
       ...prev,
       currentRound: 1,
@@ -373,7 +376,7 @@ function App() {
               <p className="text-xl font-medium text-gray-800 mb-8 leading-relaxed border-l-4 border-black pl-4">
                 <strong>Profile:</strong> IIM Trichy Graduate, Class of '26/27.<br/>
                 <strong>Role:</strong> Hedge Fund Manager, Mumbai.<br/>
-                <strong>Mission:</strong> Navigate the "Great Displacement" AI economy.
+                <strong>Mission:</strong> Navigate the "Great Displacement" AI economy and maximize returns over a <strong>12-month fiscal year</strong>.
               </p>
               
               <div className="bg-[#FEF9C3] border-2 border-black p-6 mb-8">
@@ -412,7 +415,23 @@ function App() {
                 </ul>
               </div>
 
-              <Button fullWidth onClick={startGame} className="text-2xl py-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <div className="mb-6">
+                 <label className="block font-bold uppercase text-sm mb-2">Enter Team Name</label>
+                 <input 
+                    type="text"
+                    value={gameState.teamName}
+                    onChange={(e) => setGameState(prev => ({...prev, teamName: e.target.value}))}
+                    placeholder="ALPHA SQUAD"
+                    className="w-full border-2 border-black p-3 font-mono text-lg font-bold placeholder-gray-300 focus:outline-none focus:bg-yellow-50 focus:border-blue-600 transition-colors"
+                 />
+              </div>
+
+              <Button 
+                fullWidth 
+                onClick={startGame} 
+                disabled={!gameState.teamName.trim()}
+                className="text-2xl py-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              >
                 Initialize Terminal
               </Button>
             </div>
@@ -434,7 +453,10 @@ function App() {
         <div className="col-span-12 flex flex-col md:flex-row justify-between items-end border-b-4 border-black pb-6 mb-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <span className="bg-black text-white px-3 py-1 font-bold text-sm uppercase tracking-widest">Month {gameState.currentRound}</span>
+              <div className="flex bg-black text-white px-3 py-1 font-bold text-sm uppercase tracking-widest">
+                 <span>Month {gameState.currentRound}</span>
+                 {gameState.teamName && <span className="ml-3 pl-3 border-l border-gray-500 text-yellow-400">{gameState.teamName}</span>}
+              </div>
               <span className="text-red-600 font-bold uppercase tracking-widest animate-pulse">Strategy Phase</span>
             </div>
             <h2 className="text-4xl font-black uppercase tracking-tight">{currentScenario.title}</h2>
@@ -478,7 +500,7 @@ function App() {
                          itemStyle={{fontFamily: 'monospace', fontWeight: 'bold'}}
                        />
                        <Legend verticalAlign="top" height={36} iconType="rect" />
-                       <Line name="Alpha Fund (You)" type="monotone" dataKey="nav" stroke="#1E3A8A" strokeWidth={3} dot={{r: 4, fill:'#1E3A8A'}} />
+                       <Line name={`${gameState.teamName || 'Alpha'} (You)`} type="monotone" dataKey="nav" stroke="#1E3A8A" strokeWidth={3} dot={{r: 4, fill:'#1E3A8A'}} />
                        <Line name="Nifty 100 (Bench)" type="monotone" dataKey="benchmark" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                      </LineChart>
                    </ResponsiveContainer>
@@ -602,7 +624,10 @@ function App() {
         <div className="bg-[#FDFBF7] border-4 border-black shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] max-w-5xl w-full relative my-8">
           <div className={`w-full p-6 border-b-4 border-black flex justify-between items-center ${isGain ? 'bg-green-100' : 'bg-red-100'}`}>
             <div>
-              <h2 className="text-3xl font-black uppercase tracking-tight">Round {lastRoundReport.roundId} Report</h2>
+              <div className="flex items-center gap-3 mb-1">
+                 <h2 className="text-3xl font-black uppercase tracking-tight">Round {lastRoundReport.roundId} Report</h2>
+                 {gameState.teamName && <span className="text-sm font-bold bg-black text-white px-2 py-1">{gameState.teamName}</span>}
+              </div>
               <p className="font-bold text-gray-600 text-sm uppercase tracking-widest">Monthly Statement</p>
             </div>
             <div className="text-right">
@@ -733,7 +758,9 @@ function App() {
             </div>
             
             <h1 className="text-5xl font-black uppercase mb-2">Simulation Complete</h1>
-            <p className="text-lg text-gray-500 font-medium mb-10">Performance Report Card</p>
+            <p className="text-lg text-gray-500 font-medium mb-10 flex items-center justify-center gap-2">
+               Performance Report Card: <span className="text-black font-bold uppercase">{gameState.teamName}</span>
+            </p>
 
             {/* Top Metrics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
