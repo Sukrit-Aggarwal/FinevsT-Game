@@ -26,6 +26,7 @@ export interface ScenarioRound {
 export type Portfolio = Record<AssetType, number>;
 
 export interface GameState {
+  teamName: string; // Name of the player/team
   currentRound: number; // 0 is intro, 1-12 is game
   phase: 'INTRO' | 'STRATEGY' | 'EXECUTING' | 'RESULT' | 'GAME_OVER';
   portfolio: Portfolio;
