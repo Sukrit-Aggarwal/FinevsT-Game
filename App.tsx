@@ -13,8 +13,6 @@ import {
   SCENARIO_DATA,
   ASSET_LABELS,
   INITIAL_PORTFOLIO_CONFIG,
-  MONTHLY_RISK_FREE_RATE,
-  SHARPE_ANNUALIZATION_FACTOR,
   EDUCATIONAL_MODULES
 } from './constants';
 import { Card } from './components/Card';
@@ -120,15 +118,48 @@ function App() {
   const currentScenario = SCENARIO_DATA.find(r => r.id === gameState.currentRound) || SCENARIO_DATA[0];
   
   const getAvailableCashForAsset = (type: AssetType) => {
-    const otherAllocations = Object.entries(allocations)
-      .filter(([key]) => key !== type)
-      .reduce((sum, [, val]) => sum + (val as number), 0);
+    // Determine how much cash is committed to OTHER assets, including fees and taxes
+    let cashUsedByOthers = 0;
+
+    (Object.keys(allocations) as AssetType[]).forEach(asset => {
+        if (asset === type) return;
+        const delta = allocations[asset];
+        if (delta === 0) return;
+        
+        cashUsedByOthers += delta; // + means cash outflow (buy), - means cash inflow (sell)
+        
+        // Fee
+        if (asset === AssetType.IND_EQ || asset === AssetType.US_EQ) {
+            cashUsedByOthers += Math.abs(delta) * 0.01;
+        }
+        
+        // Tax (Sell)
+        if (delta < 0) {
+             const currentVal = gameState.portfolio[asset];
+             if (currentVal > 0) {
+                const ratio = Math.abs(delta) / currentVal;
+                const costOfSold = gameState.costBasis[asset] * ratio;
+                const gain = Math.abs(delta) - costOfSold;
+                if (gain > 0) {
+                    const taxRate = asset === AssetType.IND_EQ ? 0.10 : (asset === AssetType.US_EQ ? 0.15 : 0);
+                    cashUsedByOthers += gain * taxRate;
+                }
+             }
+        }
+    });
+
+    // Net available cash from Portfolio - Commitments to others
+    const netCashAvailable = gameState.portfolio[AssetType.CASH] - cashUsedByOthers;
     
-    // Estimated fees/taxes for *other* allocations to safeguard cash
-    // This is an approximation for UI limit; strict check happens at execution
-    const approxOtherCost = Math.abs(otherAllocations) * 0.02; // Safe buffer
-    
-    return gameState.portfolio[AssetType.CASH] - otherAllocations - approxOtherCost;
+    // Now determine how much of THIS asset we can buy with that cash
+    if (type === AssetType.IND_EQ || type === AssetType.US_EQ) {
+        // Cost = Delta + 0.01*Delta = 1.01 * Delta
+        // MaxDelta = Cash / 1.01
+        return Math.max(0, netCashAvailable / 1.01);
+    } else {
+        // Cost = Delta
+        return Math.max(0, netCashAvailable);
+    }
   };
 
   // --- ACTIONS ---
@@ -298,7 +329,7 @@ function App() {
                    module.icon === 'bonds' ? <Scale size={32}/> : 
                    module.icon === 'equities' ? <BarChart2 size={32}/> : 
                    module.icon === 'gold' ? <Coins size={32}/> : 
-                   module.icon === 'sharpe' ? <Target size={32}/> :
+                   module.icon === 'target' ? <Target size={32}/> :
                    <Info size={32}/>}
                 </div>
                 <div>
@@ -377,7 +408,7 @@ function App() {
                    <li><strong>Liquidity Lock:</strong> Max Sell ₹{SELL_LIMIT_AMOUNT} Cr per asset/month.</li>
                    <li><strong>Transaction Fee:</strong> 1% on Equity Buy/Sell.</li>
                    <li><strong>Taxes:</strong> 10% on Ind Eq Profits, 15% on US Eq Profits (realized on sell).</li>
-                   <li><strong>Evaluation:</strong> Final Score based on Sharpe Ratio (Risk-Adjusted Returns).</li>
+                   <li><strong>Evaluation:</strong> Maximize Total Portfolio Value (NAV).</li>
                 </ul>
               </div>
 
@@ -433,23 +464,25 @@ function App() {
         {/* LEFT COL: INTEL */}
         <div className="col-span-12 lg:col-span-7 flex flex-col gap-6">
           {showGraph && (
-              <Card title="Alpha vs Benchmark (Nifty 100)" className="h-[350px] relative animate-in fade-in slide-in-from-top-4">
+              <Card title="Alpha vs Benchmark (Nifty 100)" className="relative animate-in fade-in slide-in-from-top-4">
                 <button onClick={() => setShowGraph(false)} className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded border border-transparent hover:border-black transition-all">
                     <X size={20}/>
                 </button>
-                 <ResponsiveContainer width="100%" height="100%">
-                   <LineChart data={gameState.history} margin={{top: 20, right: 20, left: 10, bottom: 20}}>
-                     <XAxis dataKey="round" hide />
-                     <YAxis domain={getGraphDomain()} hide />
-                     <Tooltip 
-                       contentStyle={{border: '2px solid black', borderRadius: '0px', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
-                       itemStyle={{fontFamily: 'monospace', fontWeight: 'bold'}}
-                     />
-                     <Legend verticalAlign="top" height={36} iconType="rect" />
-                     <Line name="Alpha Fund (You)" type="monotone" dataKey="nav" stroke="#1E3A8A" strokeWidth={3} dot={{r: 4, fill:'#1E3A8A'}} />
-                     <Line name="Nifty 100 (Bench)" type="monotone" dataKey="benchmark" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                   </LineChart>
-                 </ResponsiveContainer>
+                 <div className="w-full h-[280px] mt-2">
+                   <ResponsiveContainer width="100%" height="100%">
+                     <LineChart data={gameState.history} margin={{top: 20, right: 20, left: 10, bottom: 20}}>
+                       <XAxis dataKey="round" hide />
+                       <YAxis domain={getGraphDomain()} hide />
+                       <Tooltip 
+                         contentStyle={{border: '2px solid black', borderRadius: '0px', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)'}}
+                         itemStyle={{fontFamily: 'monospace', fontWeight: 'bold'}}
+                       />
+                       <Legend verticalAlign="top" height={36} iconType="rect" />
+                       <Line name="Alpha Fund (You)" type="monotone" dataKey="nav" stroke="#1E3A8A" strokeWidth={3} dot={{r: 4, fill:'#1E3A8A'}} />
+                       <Line name="Nifty 100 (Bench)" type="monotone" dataKey="benchmark" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                     </LineChart>
+                   </ResponsiveContainer>
+                 </div>
               </Card>
           )}
 
@@ -521,7 +554,7 @@ function App() {
             </div>
 
             <div className="mt-8 pt-6 border-t-2 border-gray-100">
-               {projectedCash < -0.1 && (
+               {projectedCash < -0.01 && (
                  <div className="text-red-600 text-xs font-bold text-center mb-2 uppercase flex justify-center items-center gap-1 animate-bounce">
                    <AlertTriangle size={12}/> Insufficient Cash reserves
                  </div>
@@ -689,28 +722,7 @@ function App() {
     // Basic Returns
     const totalReturn = ((gameState.nav - INITIAL_FUND_SIZE) / INITIAL_FUND_SIZE) * 100;
     const benchmarkReturn = ((gameState.history[gameState.history.length-1].benchmark - INITIAL_FUND_SIZE) / INITIAL_FUND_SIZE) * 100;
-    
-    // Sharpe Ratio Calculation based on user request:
-    // Formula: (Total Annual Return - 0.065) / (Monthly Std Dev * 3.46)
-    // We treat "Total Annual Return" and "Monthly Std Dev" as decimals here to match the 0.065 scalar.
-    
-    const returns = gameState.monthlyReturns; // Array of percentages, e.g. [2.5, -1.0, ...]
-    const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
-    
-    // Standard Deviation of monthly returns (Percentage)
-    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
-    const stdDevPct = Math.sqrt(variance);
-    
-    // Convert to Decimals for the User Formula
-    const totalReturnDecimal = totalReturn / 100;
-    const stdDevDecimal = stdDevPct / 100;
-    
-    const riskFreeRate = 0.065;
-    
-    const sharpeNumerator = totalReturnDecimal - riskFreeRate;
-    const sharpeDenominator = stdDevDecimal * SHARPE_ANNUALIZATION_FACTOR;
-    
-    const annualizedSharpe = sharpeDenominator === 0 ? 0 : sharpeNumerator / sharpeDenominator;
+    const finalNAV = gameState.nav;
 
     return (
       <div className="min-h-screen bg-[#FDFBF7] p-8">
@@ -721,55 +733,34 @@ function App() {
             </div>
             
             <h1 className="text-5xl font-black uppercase mb-2">Simulation Complete</h1>
-            <p className="text-lg text-gray-500 font-medium mb-10">Analyzing risk-adjusted returns and volatility...</p>
+            <p className="text-lg text-gray-500 font-medium mb-10">Performance Report Card</p>
 
             {/* Top Metrics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
               <div className="bg-white border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <div className="text-xs font-bold text-gray-400 uppercase mb-2">Total Return</div>
-                <div className={`text-4xl font-mono font-black ${totalReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalReturn > 0 ? '+' : ''}{totalReturn.toFixed(1)}%
-                </div>
-              </div>
-              <div className="bg-white border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                 <div className="text-xs font-bold text-gray-400 uppercase mb-2">Benchmark Return</div>
+                 <div className="text-xs font-bold text-gray-400 uppercase mb-2">Benchmark Return (Nifty)</div>
                  <div className="text-4xl font-mono font-black text-gray-800">
                   {benchmarkReturn > 0 ? '+' : ''}{benchmarkReturn.toFixed(1)}%
                 </div>
               </div>
-              <div className="bg-white border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                 <div className="text-xs font-bold text-gray-400 uppercase mb-2">Volatility (StdDev)</div>
-                 <div className="text-4xl font-mono font-black text-gray-800">
-                   {stdDevPct.toFixed(2)}%
+              
+               <div className="bg-white border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                <div className="text-xs font-bold text-gray-400 uppercase mb-2">Your Total Return</div>
+                <div className={`text-4xl font-mono font-black ${totalReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {totalReturn > 0 ? '+' : ''}{totalReturn.toFixed(1)}%
                 </div>
               </div>
-              {/* SHARPE HERO CARD */}
+
+              {/* FINAL NAV HERO CARD */}
               <div className="bg-[#1E3A8A] border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-white relative overflow-hidden group">
                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full group-hover:scale-150 transition-transform"></div>
                  <div className="text-xs font-bold text-blue-200 uppercase mb-2 flex items-center gap-1">
-                    <Activity size={12}/> Annualized Sharpe
+                    <Activity size={12}/> Final Portfolio Value
                  </div>
                  <div className="text-5xl font-mono font-black relative z-10">
-                  {annualizedSharpe.toFixed(2)}
+                  ₹{finalNAV.toFixed(2)} Cr
                 </div>
               </div>
-            </div>
-
-            {/* Sharpe Calculation Explanation */}
-            <div className="bg-gray-100 border-2 border-black p-6 mb-10 text-left font-mono text-sm">
-                <h3 className="font-bold text-gray-500 uppercase mb-3 text-xs tracking-widest">Sharpe Calculation Breakdown</h3>
-                <div className="flex flex-col md:flex-row md:items-center gap-4 text-gray-800">
-                    <div className="bg-white px-3 py-2 border border-black">
-                        Sharpe = (Total Return - 0.065) / (Monthly Std Dev × {SHARPE_ANNUALIZATION_FACTOR})
-                    </div>
-                    <ArrowRight className="hidden md:block text-gray-400" size={16}/>
-                    <div className="bg-white px-3 py-2 border border-black font-bold">
-                        ({totalReturnDecimal.toFixed(3)} - 0.065) / ({stdDevDecimal.toFixed(3)} × {SHARPE_ANNUALIZATION_FACTOR}) = {annualizedSharpe.toFixed(2)}
-                    </div>
-                </div>
-                <div className="mt-2 text-xs text-gray-500 italic">
-                  *Calculated using decimal values (e.g., 15% = 0.15)
-                </div>
             </div>
 
             {/* Monthly Track Record Table */}
