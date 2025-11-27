@@ -606,11 +606,11 @@ function App() {
 
               {/* Round 1 Image */}
               {gameState.currentRound === 1 && (
-                <div className="mt-6 pt-6 border-t-2 border-gray-300">
+                <div className="mt-6 pt-6 border-t-2 border-gray-300 flex justify-center">
                   <img 
                     src="/pics/round1.png" 
                     alt="Round 1 Scenario" 
-                    className="w-full h-auto max-h-64 object-cover border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                    className="w-full h-auto object-contain border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                   />
                 </div>
               )}
