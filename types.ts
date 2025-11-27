@@ -1,8 +1,9 @@
 
 export enum AssetType {
-  IND_EQ = 'IND_EQ',
-  US_EQ = 'US_EQ',
-  G_SEC = 'G_SEC',
+  INFRA = 'INFRA',
+  FMCG = 'FMCG',
+  BFSI = 'BFSI',
+  IT = 'IT',
   GOLD = 'GOLD',
   CASH = 'CASH'
 }
