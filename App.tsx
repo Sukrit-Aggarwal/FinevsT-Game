@@ -448,7 +448,7 @@ function App() {
               {/* IMAGE SLOT BELOW TEXT */}
               <div className="mb-8 w-full">
                 <img 
-                  src="https://via.placeholder.com/800x400.png?text=Kingdom+of+FinLand+Illustration" 
+                  src="pics/round1.png?text=Kingdom+of+FinLand+Illustration" 
                   alt="King Ajit and the Kingdom of FinLand" 
                   className="w-full h-auto max-h-80 object-cover border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                   onError={(e) => {
