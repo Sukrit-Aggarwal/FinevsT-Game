@@ -58,9 +58,10 @@ function App() {
   });
 
   const [allocations, setAllocations] = useState<Record<string, number>>({
-    [AssetType.IND_EQ]: 0,
-    [AssetType.US_EQ]: 0,
-    [AssetType.G_SEC]: 0,
+    [AssetType.INFRA]: 0,
+    [AssetType.FMCG]: 0,
+    [AssetType.BFSI]: 0,
+    [AssetType.IT]: 0,
     [AssetType.GOLD]: 0
   });
 
@@ -79,7 +80,7 @@ function App() {
     let totalFees = 0;
     let totalTax = 0;
     const taxDetails: Record<AssetType, number> = { 
-      [AssetType.IND_EQ]: 0, [AssetType.US_EQ]: 0, [AssetType.G_SEC]: 0, [AssetType.GOLD]: 0, [AssetType.CASH]: 0 
+      [AssetType.INFRA]: 0, [AssetType.FMCG]: 0, [AssetType.BFSI]: 0, [AssetType.IT]: 0, [AssetType.GOLD]: 0, [AssetType.CASH]: 0 
     };
     const feeDetails: Record<AssetType, number> = { ...taxDetails };
 
@@ -87,8 +88,9 @@ function App() {
       const delta = allocs[asset];
       if (delta === 0) return;
 
-      // 1. Transaction Fees (1% on Equity Buy/Sell)
-      if (asset === AssetType.IND_EQ || asset === AssetType.US_EQ) {
+      // 1. Transaction Fees (1% on Equity Sectors Buy/Sell)
+      // Gold is exempt in this simplified model, or we can add it. Let's keep Equities only based on prompt.
+      if ([AssetType.INFRA, AssetType.FMCG, AssetType.BFSI, AssetType.IT].includes(asset)) {
         const fee = Math.abs(delta) * 0.01;
         totalFees += fee;
         feeDetails[asset] = fee;
@@ -104,10 +106,11 @@ function App() {
         const gain = sellAmount - costOfSold;
 
         if (gain > 0) {
-           // Tax Rates: 10% IND_EQ, 15% US_EQ, 0% Others
+           // Tax Rates: 10% for Domestic Equities (INFRA, FMCG, BFSI, IT)
            let taxRate = 0;
-           if (asset === AssetType.IND_EQ) taxRate = 0.10;
-           if (asset === AssetType.US_EQ) taxRate = 0.15;
+           if ([AssetType.INFRA, AssetType.FMCG, AssetType.BFSI, AssetType.IT].includes(asset)) {
+               taxRate = 0.10;
+           }
            
            const tax = gain * taxRate;
            totalTax += tax;
@@ -138,7 +141,7 @@ function App() {
         cashUsedByOthers += delta; // + means cash outflow (buy), - means cash inflow (sell)
         
         // Fee
-        if (asset === AssetType.IND_EQ || asset === AssetType.US_EQ) {
+        if ([AssetType.INFRA, AssetType.FMCG, AssetType.BFSI, AssetType.IT].includes(asset)) {
             cashUsedByOthers += Math.abs(delta) * 0.01;
         }
         
@@ -149,9 +152,8 @@ function App() {
                 const ratio = Math.abs(delta) / currentVal;
                 const costOfSold = gameState.costBasis[asset] * ratio;
                 const gain = Math.abs(delta) - costOfSold;
-                if (gain > 0) {
-                    const taxRate = asset === AssetType.IND_EQ ? 0.10 : (asset === AssetType.US_EQ ? 0.15 : 0);
-                    cashUsedByOthers += gain * taxRate;
+                if (gain > 0 && [AssetType.INFRA, AssetType.FMCG, AssetType.BFSI, AssetType.IT].includes(asset)) {
+                    cashUsedByOthers += gain * 0.10;
                 }
              }
         }
@@ -161,7 +163,7 @@ function App() {
     const netCashAvailable = gameState.portfolio[AssetType.CASH] - cashUsedByOthers;
     
     // Now determine how much of THIS asset we can buy with that cash
-    if (type === AssetType.IND_EQ || type === AssetType.US_EQ) {
+    if ([AssetType.INFRA, AssetType.FMCG, AssetType.BFSI, AssetType.IT].includes(type)) {
         // Cost = Delta + 0.01*Delta = 1.01 * Delta
         // MaxDelta = Cash / 1.01
         return Math.max(0, netCashAvailable / 1.01);
@@ -235,7 +237,10 @@ function App() {
       let totalPnL = 0;
 
       (Object.keys(finalPortfolio) as AssetType[]).forEach(asset => {
-        if (asset !== AssetType.CASH) {
+        if (asset === AssetType.CASH) {
+          assetPnL[asset] = 0;
+        } else {
+          // Check for undefined return and default to 0
           const ret = roundReturns[asset] || 0;
           const startVal = finalPortfolio[asset];
           const gain = startVal * ret;
@@ -243,9 +248,6 @@ function App() {
           assetPnL[asset] = gain;
           finalPortfolio[asset] += gain;
           totalPnL += gain;
-          // Note: Unrealized gains do NOT increase Cost Basis
-        } else {
-          assetPnL[asset] = 0;
         }
       });
 
@@ -254,10 +256,19 @@ function App() {
       const prevNav = gameState.nav;
       const navChangePct = ((newNav - prevNav) / prevNav) * 100;
 
-      // Benchmark tracks IND_EQ specifically
+      // Benchmark tracks NIFTY equivalent (Let's average BFSI and INFRA as 'Index' proxy or just flat 1% if not specified)
+      // The old dataset had IND_EQ. Here we don't have a single index. 
+      // Let's assume a simplified Benchmark Return of +0.8% per month (~10% annual) for comparison if not specified.
+      // OR better, let's track an equal weighted basket of the 4 equity sectors as benchmark.
+      const avgEquityReturn = (
+          (roundReturns[AssetType.INFRA] || 0) + 
+          (roundReturns[AssetType.FMCG] || 0) + 
+          (roundReturns[AssetType.BFSI] || 0) + 
+          (roundReturns[AssetType.IT] || 0)
+      ) / 4;
+      
       const prevBenchmark = gameState.history[gameState.history.length - 1].benchmark;
-      const benchmarkReturn = roundReturns[AssetType.IND_EQ] || 0;
-      const newBenchmark = prevBenchmark * (1 + benchmarkReturn);
+      const newBenchmark = prevBenchmark * (1 + avgEquityReturn);
 
       // 4. Generate Report
       const report: RoundReport = {
@@ -290,9 +301,10 @@ function App() {
       setIsProcessing(false);
       setIsLocked(false); 
       setAllocations({
-        [AssetType.IND_EQ]: 0,
-        [AssetType.US_EQ]: 0,
-        [AssetType.G_SEC]: 0,
+        [AssetType.INFRA]: 0,
+        [AssetType.FMCG]: 0,
+        [AssetType.BFSI]: 0,
+        [AssetType.IT]: 0,
         [AssetType.GOLD]: 0
       });
 
@@ -419,33 +431,49 @@ function App() {
       </div>
 
       <div className="flex-grow flex items-center justify-center p-4">
-        <div className="max-w-3xl w-full">
-          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-10 relative overflow-hidden">
+        <div className="max-w-4xl w-full">
+          <div className="bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-8 relative overflow-hidden">
             <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-100 rounded-full z-0 opacity-50"></div>
             
             <div className="relative z-10">
-              <h1 className="text-6xl font-black mb-2 tracking-tighter uppercase">The Alpha Edge</h1>
-              <div className="text-4xl font-black mb-6 tracking-tighter uppercase text-[#DC2626]">India 2028 Simulation</div>
+              <h1 className="text-6xl font-black mb-2 tracking-tighter uppercase">The Fin-Land Chronicles</h1>
+              <div className="text-4xl font-black mb-6 tracking-tighter uppercase text-[#DC2626]">Alpha Edge Simulation</div>
               
-              <p className="text-xl font-medium text-gray-800 mb-8 leading-relaxed border-l-4 border-black pl-4">
-                <strong>Profile:</strong> IIM Trichy Graduate, Class of '26/27.<br/>
-                <strong>Role:</strong> Hedge Fund Manager, Mumbai.<br/>
-                <strong>Mission:</strong> Navigate the "Great Displacement" AI economy and maximize returns over a <strong>12-month fiscal year</strong>.
+              <p className="text-xl font-medium text-gray-800 mb-6 leading-relaxed border-l-4 border-black pl-4">
+                <strong>Profile:</strong> Royal Portfolio Manager of FinLand.<br/>
+                <strong>Mission:</strong> Navigate King Ajit's chaotic decrees, corruption scandals, and "Royal" schemes to maximize the Kingdom's wealth.<br/>
+                <strong>Duration:</strong> 15 Rounds of absolute madness.
               </p>
+
+              {/* IMAGE SLOT BELOW TEXT */}
+              <div className="mb-8 w-full">
+                <img 
+                  src="https://via.placeholder.com/800x400.png?text=Kingdom+of+FinLand+Illustration" 
+                  alt="King Ajit and the Kingdom of FinLand" 
+                  className="w-full h-auto max-h-80 object-cover border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'; // Hide if fails, or show fallback
+                  }}
+                />
+              </div>
               
               <div className="bg-[#FEF9C3] border-2 border-black p-6 mb-8">
-                <h3 className="font-black text-lg mb-2 uppercase">Current Portfolio Position (₹100 Cr)</h3>
-                <div className="grid grid-cols-5 gap-2 text-center text-sm font-bold">
+                <h3 className="font-black text-lg mb-2 uppercase">Initial Portfolio (₹100 Cr)</h3>
+                <div className="grid grid-cols-6 gap-2 text-center text-xs font-bold">
                    <div className="p-2 bg-white border border-black">
-                      <div className="text-gray-500">IND_EQ</div>
-                      <div>40%</div>
-                   </div>
-                   <div className="p-2 bg-white border border-black">
-                      <div className="text-gray-500">US_EQ</div>
+                      <div className="text-gray-500">INFRA</div>
                       <div>20%</div>
                    </div>
                    <div className="p-2 bg-white border border-black">
-                      <div className="text-gray-500">G-SEC</div>
+                      <div className="text-gray-500">FMCG</div>
+                      <div>20%</div>
+                   </div>
+                   <div className="p-2 bg-white border border-black">
+                      <div className="text-gray-500">BFSI</div>
+                      <div>20%</div>
+                   </div>
+                   <div className="p-2 bg-white border border-black">
+                      <div className="text-gray-500">IT</div>
                       <div>20%</div>
                    </div>
                    <div className="p-2 bg-white border border-black">
@@ -463,9 +491,9 @@ function App() {
                 <h4 className="font-bold uppercase mb-1">Trading Rules:</h4>
                 <ul className="list-disc pl-4 space-y-1">
                    <li><strong>Objective:</strong> Maximize ABSOLUTE RETURNS (Final NAV).</li>
-                   <li><strong>Liquidity Lock:</strong> Max Sell ₹{SELL_LIMIT_AMOUNT} Cr per asset/month.</li>
-                   <li><strong>Transaction Fee:</strong> 1% on Equity Buy/Sell.</li>
-                   <li><strong>Taxes:</strong> 10% on Ind Eq Profits, 15% on US Eq Profits (realized on sell).</li>
+                   <li><strong>Liquidity Lock:</strong> Max Sell ₹{SELL_LIMIT_AMOUNT} Cr per asset/round.</li>
+                   <li><strong>Fees:</strong> 1% Transaction Fee on all Equity Sectors.</li>
+                   <li><strong>Taxes:</strong> 10% on Profits from Equity Sectors (Realized on Sell).</li>
                 </ul>
               </div>
 
@@ -475,7 +503,7 @@ function App() {
                     type="text"
                     value={gameState.teamName}
                     onChange={(e) => setGameState(prev => ({...prev, teamName: e.target.value}))}
-                    placeholder="ALPHA SQUAD"
+                    placeholder="ROYAL TRADERS"
                     className="w-full border-2 border-black p-3 font-mono text-lg font-bold placeholder-gray-300 focus:outline-none focus:bg-yellow-50 focus:border-blue-600 transition-colors"
                  />
               </div>
@@ -540,7 +568,7 @@ function App() {
         {/* LEFT COL: INTEL */}
         <div className="col-span-12 lg:col-span-7 flex flex-col gap-6">
           {showGraph && (
-              <Card title="Alpha vs Benchmark (Nifty 100)" className="relative animate-in fade-in slide-in-from-top-4">
+              <Card title="Alpha vs Benchmark (Sector Basket)" className="relative animate-in fade-in slide-in-from-top-4">
                 <button onClick={() => setShowGraph(false)} className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded border border-transparent hover:border-black transition-all">
                     <X size={20}/>
                 </button>
@@ -555,7 +583,7 @@ function App() {
                        />
                        <Legend verticalAlign="top" height={36} iconType="rect" />
                        <Line name={`${gameState.teamName || 'Alpha'} (You)`} type="monotone" dataKey="nav" stroke="#1E3A8A" strokeWidth={3} dot={{r: 4, fill:'#1E3A8A'}} />
-                       <Line name="Nifty 100 (Bench)" type="monotone" dataKey="benchmark" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                       <Line name="Market Avg (Bench)" type="monotone" dataKey="benchmark" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                      </LineChart>
                    </ResponsiveContainer>
                  </div>
@@ -614,7 +642,7 @@ function App() {
               </div>
 
               <div className="space-y-6 pr-2">
-                {[AssetType.IND_EQ, AssetType.US_EQ, AssetType.G_SEC, AssetType.GOLD].map((type) => (
+                {[AssetType.INFRA, AssetType.FMCG, AssetType.BFSI, AssetType.IT, AssetType.GOLD].map((type) => (
                   <AssetControl
                     key={type}
                     type={type as AssetType}
@@ -723,7 +751,7 @@ function App() {
               <h3 className="font-black text-lg uppercase mb-4 flex items-center gap-2">
                 <Briefcase size={20}/> Market Movements
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                  {(Object.keys(lastRoundReport.marketReturns) as AssetType[]).filter(k => k !== AssetType.CASH).map(asset => (
                    <div key={asset} className="border border-black p-2 flex justify-between items-center bg-gray-50">
                       <span className="text-xs font-bold uppercase">{ASSET_LABELS[asset].split(' ')[0]}</span>
@@ -752,7 +780,7 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[AssetType.IND_EQ, AssetType.US_EQ, AssetType.G_SEC, AssetType.GOLD, AssetType.CASH].map((type) => {
+                    {[AssetType.INFRA, AssetType.FMCG, AssetType.BFSI, AssetType.IT, AssetType.GOLD, AssetType.CASH].map((type) => {
                       const start = lastRoundReport.portfolioStart[type];
                       const action = lastRoundReport.allocations[type] || 0;
                       const pnl = lastRoundReport.assetPnL[type] || 0;
@@ -833,7 +861,7 @@ function App() {
             {/* Top Metrics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
               <div className="bg-white border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                 <div className="text-xs font-bold text-gray-400 uppercase mb-2">Benchmark Return (Nifty)</div>
+                 <div className="text-xs font-bold text-gray-400 uppercase mb-2">Benchmark Return (Market Avg)</div>
                  <div className="text-4xl font-mono font-black text-gray-800">
                   {benchmarkReturn > 0 ? '+' : ''}{benchmarkReturn.toFixed(1)}%
                 </div>
