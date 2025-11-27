@@ -12,6 +12,7 @@ interface AssetControlProps {
   maxBuyLimit: number; // Max allowed buy based on Cash available
   totalCashStart: number; // The total cash at start of round, for stable slider scaling
   onDeltaChange: (type: AssetType, delta: number) => void;
+  disabled?: boolean;
 }
 
 export const AssetControl: React.FC<AssetControlProps> = ({
@@ -21,7 +22,8 @@ export const AssetControl: React.FC<AssetControlProps> = ({
   maxMove,
   maxBuyLimit,
   totalCashStart,
-  onDeltaChange
+  onDeltaChange,
+  disabled = false
 }) => {
   if (type === AssetType.CASH) return null;
 
@@ -33,6 +35,8 @@ export const AssetControl: React.FC<AssetControlProps> = ({
   const effectiveMaxSell = Math.min(currentValue, maxMove);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
+    
     let newDelta = parseFloat(e.target.value);
     
     // Auto-Lock: Clamp Selling to effectiveMaxSell
@@ -78,10 +82,11 @@ export const AssetControl: React.FC<AssetControlProps> = ({
   const rightValidPct = 50 + (effectiveMaxBuy / sliderRange * 50);
 
   return (
-    <div className="mb-5 last:mb-0">
+    <div className={`mb-5 last:mb-0 transition-opacity duration-300 ${disabled ? 'opacity-60 pointer-events-none grayscale' : ''}`}>
       <div className="flex justify-between items-center mb-1">
         <div className="flex items-center gap-2">
           <span className="font-bold text-md">{ASSET_LABELS[type]}</span>
+          {disabled && <Lock size={12} className="text-gray-500"/>}
         </div>
         <div className="text-right">
           <span className="block font-mono font-bold text-lg">₹{projectedValue.toFixed(2)} Cr</span>
@@ -125,6 +130,7 @@ export const AssetControl: React.FC<AssetControlProps> = ({
           step={0.01}
           value={delta}
           onChange={handleSliderChange}
+          disabled={disabled}
           className="w-full absolute z-20 opacity-0 cursor-pointer h-full"
         />
 
