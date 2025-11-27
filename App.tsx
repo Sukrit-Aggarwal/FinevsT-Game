@@ -444,18 +444,6 @@ function App() {
                 <strong>Mission:</strong> Navigate King Ajit's chaotic decrees, corruption scandals, and "Royal" schemes to maximize the Kingdom's wealth.<br/>
                 <strong>Duration:</strong> 15 Rounds of absolute madness.
               </p>
-
-              {/* IMAGE SLOT BELOW TEXT */}
-              <div className="mb-8 w-full">
-                <img 
-                  src="pics/round1.png?text=Kingdom+of+FinLand+Illustration" 
-                  alt="King Ajit and the Kingdom of FinLand" 
-                  className="w-full h-auto max-h-80 object-cover border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'; // Hide if fails, or show fallback
-                  }}
-                />
-              </div>
               
               <div className="bg-[#FEF9C3] border-2 border-black p-6 mb-8">
                 <h3 className="font-black text-lg mb-2 uppercase">Initial Portfolio (₹100 Cr)</h3>
@@ -615,6 +603,17 @@ function App() {
               <div className="whitespace-pre-wrap font-medium text-lg leading-relaxed text-gray-800 text-justify">
                 {currentScenario.news}
               </div>
+
+              {/* Round 1 Image */}
+              {gameState.currentRound === 1 && (
+                <div className="mt-6 pt-6 border-t-2 border-gray-300">
+                  <img 
+                    src="/pics/round1.png" 
+                    alt="Round 1 Scenario" 
+                    className="w-full h-auto max-h-64 object-cover border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                  />
+                </div>
+              )}
 
             </div>
           </Card>
