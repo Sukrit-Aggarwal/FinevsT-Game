@@ -37,7 +37,10 @@ import {
   HelpCircle,
   Coins,
   Scale,
-  User
+  User,
+  Lock,
+  Unlock,
+  CheckCircle
 } from 'lucide-react';
 
 function App() {
@@ -65,6 +68,10 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showGraph, setShowGraph] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  
+  // New State for Locking Mechanics
+  const [isLocked, setIsLocked] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // --- CALCULATIONS & LOGIC ---
 
@@ -176,6 +183,7 @@ function App() {
   };
 
   const handleAllocationChange = (type: AssetType, delta: number) => {
+    if (isLocked) return;
     setAllocations(prev => ({
       ...prev,
       [type]: delta
@@ -185,6 +193,8 @@ function App() {
   const executeRound = () => {
     if (projectedCash < -0.01) return; 
     
+    // Close confirmations and reset lock for processing
+    setShowConfirm(false);
     setIsProcessing(true);
     setGameState(prev => ({ ...prev, phase: 'EXECUTING' }));
 
@@ -276,7 +286,9 @@ function App() {
         monthlyReturns: [...prev.monthlyReturns, navChangePct]
       }));
 
+      // Reset for next round
       setIsProcessing(false);
+      setIsLocked(false); 
       setAllocations({
         [AssetType.IND_EQ]: 0,
         [AssetType.US_EQ]: 0,
@@ -352,6 +364,48 @@ function App() {
       </div>
     );
   };
+  
+  const renderConfirmationModal = () => {
+    if (!showConfirm) return null;
+    
+    // Calculate total net change to assets (not including fees/tax)
+    const netChange = (Object.values(allocations) as number[]).reduce((a,b)=>a+b,0);
+    const hasTrades = netChange !== 0 || Object.values(allocations).some(v => v !== 0);
+
+    return (
+      <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
+         <div className="bg-white border-4 border-black shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] max-w-md w-full p-6">
+            <div className="flex flex-col items-center text-center mb-6">
+               <AlertTriangle size={48} className="text-yellow-500 mb-2" />
+               <h3 className="text-2xl font-black uppercase">Confirm Execution</h3>
+               <p className="text-gray-600 font-medium mt-2">
+                 Are you sure you want to submit these trades for Round {gameState.currentRound}?
+               </p>
+            </div>
+            
+            <div className="bg-gray-100 p-4 border-2 border-black mb-6 font-mono text-sm">
+               <div className="flex justify-between mb-1">
+                 <span>Trades Count:</span>
+                 <span className="font-bold">{Object.values(allocations).filter(v => v !== 0).length}</span>
+               </div>
+               <div className="flex justify-between mb-1">
+                 <span>Est. Transaction Fees:</span>
+                 <span className="text-red-600">₹{currentEffects.totalFees.toFixed(2)} Cr</span>
+               </div>
+               <div className="flex justify-between border-t border-gray-300 pt-1 mt-1">
+                 <span>Est. Cash Remaining:</span>
+                 <span className="font-bold">₹{projectedCash.toFixed(2)} Cr</span>
+               </div>
+            </div>
+            
+            <div className="flex gap-4">
+               <Button variant="secondary" fullWidth onClick={() => setShowConfirm(false)}>Cancel</Button>
+               <Button variant="success" fullWidth onClick={executeRound}>Confirm & Execute</Button>
+            </div>
+         </div>
+      </div>
+    );
+  };
 
   const renderIntro = () => (
     <div className="min-h-screen flex flex-col relative">
@@ -408,10 +462,10 @@ function App() {
               <div className="bg-gray-100 border-2 border-black p-4 mb-8 text-sm">
                 <h4 className="font-bold uppercase mb-1">Trading Rules:</h4>
                 <ul className="list-disc pl-4 space-y-1">
+                   <li><strong>Objective:</strong> Maximize ABSOLUTE RETURNS (Final NAV).</li>
                    <li><strong>Liquidity Lock:</strong> Max Sell ₹{SELL_LIMIT_AMOUNT} Cr per asset/month.</li>
                    <li><strong>Transaction Fee:</strong> 1% on Equity Buy/Sell.</li>
                    <li><strong>Taxes:</strong> 10% on Ind Eq Profits, 15% on US Eq Profits (realized on sell).</li>
-                   <li><strong>Evaluation:</strong> Maximize Total Portfolio Value (NAV).</li>
                 </ul>
               </div>
 
@@ -570,6 +624,7 @@ function App() {
                     maxBuyLimit={getAvailableCashForAsset(type as AssetType)}
                     totalCashStart={gameState.portfolio[AssetType.CASH]} 
                     onDeltaChange={handleAllocationChange}
+                    disabled={isLocked} // Pass locked state
                   />
                 ))}
               </div>
@@ -581,14 +636,27 @@ function App() {
                    <AlertTriangle size={12}/> Insufficient Cash reserves
                  </div>
                )}
-               <Button 
-                fullWidth 
-                onClick={executeRound} 
-                disabled={projectedCash < -0.01}
-                className={`text-lg py-4 ${projectedCash < -0.01 ? "opacity-50 cursor-not-allowed" : "hover:-translate-y-1"}`}
-               >
-                 Lock Trades & Execute
-               </Button>
+               
+               <div className="flex gap-3">
+                  <Button 
+                    fullWidth 
+                    variant={isLocked ? "secondary" : "primary"}
+                    onClick={() => setIsLocked(!isLocked)} 
+                    className="flex-1 py-4 flex items-center justify-center gap-2"
+                  >
+                    {isLocked ? <><Unlock size={18}/> Unlock Positions</> : <><Lock size={18}/> Lock Positions</>}
+                  </Button>
+                  
+                  <Button 
+                    fullWidth 
+                    variant="success"
+                    onClick={() => setShowConfirm(true)} 
+                    disabled={!isLocked || projectedCash < -0.01}
+                    className="flex-1 py-4 flex items-center justify-center gap-2"
+                  >
+                    Submit Trades <CheckCircle size={18}/>
+                  </Button>
+               </div>
             </div>
           </Card>
         </div>
@@ -836,6 +904,7 @@ function App() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-black font-sans selection:bg-yellow-200">
       {renderHelpModal()}
+      {renderConfirmationModal()}
       {gameState.phase === 'INTRO' && renderIntro()}
       {(gameState.phase === 'STRATEGY' || gameState.phase === 'EXECUTING' || gameState.phase === 'RESULT') && renderDashboard()}
       {gameState.phase === 'EXECUTING' && renderProcessing()}
