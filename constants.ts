@@ -26,29 +26,29 @@ export const ASSET_LABELS: Record<AssetType, string> = {
 
 export const EDUCATIONAL_MODULES = [
   {
-    title: "1. Macro Basics: Inflation & Rates",
+    title: "1. Macro Cheat Sheet",
     icon: "macro",
-    content: "The economy is a cycle. When 'Inflation' (prices) rises, Central Banks (RBI) raise 'Interest Rates'. \n\n• High Rates = Expensive loans -> Hurts Capex Sectors (Infra) -> Inflation Cools.\n• Low Rates = Cheap money -> Boosts Banking & Infra -> Risk of Inflation.\n\nWatch the CPI (Inflation) and Repo (Rates) data closely."
+    content: "• Inflation: When the King prints money, prices rise. Rates go UP.\n• High Rates: Bad for INFRA (Debt gets expensive). Good for BFSI (Lending profits).\n• Low Rates: Good for INFRA (Construction boom)."
   },
   {
-    title: "2. Sector Sensitivity: Interest Rates",
-    icon: "bonds",
-    content: "The Sovereign Bond Seesaw. Different sectors react differently to Interest Rates:\n\n• BFSI (Banks): Generally benefit from higher rates (can charge more for loans), IF bad loans don't spike.\n• INFRA: Hates high rates. They borrow huge amounts to build; high rates destroy their margins.\n• FMCG: Defensive. People buy toothpaste even in a recession, but high inflation hurts their raw material costs."
-  },
-  {
-    title: "3. Currency & Exports (IT)",
+    title: "2. Sector Logic",
     icon: "equities",
-    content: "The IT Sector in FinLand exports services to the world and earns in Dollars.\n\n• Weak Rupee = Good for IT (Their Dollar earnings convert to MORE Rupees).\n• Strong Rupee = Bad for IT.\n\nAlso, IT is 'Defensive'. When the domestic economy (FinLand) is in chaos, investors hide in IT."
+    content: "• FMCG: The 'Safe Bet'. People eat biryani even in a recession.\n• IT (Tech): Loves a weak Rupee (Earnings in $) and Cyber-Fear.\n• INFRA: High risk, high reward. Needs peace and stability to build."
   },
   {
-    title: "4. Gold: The Crisis Hedge",
+    title: "3. The Fear Gauge (Gold)",
     icon: "gold",
-    content: "Gold pays no interest and produces nothing. It is a 'Store of Value', though its price fluctuates based on market demand and supply.\n\nInvestors buy Gold when they are scared of:\n1. Currency Collapse (Printing too much money).\n2. Governance Fraud (Scams).\n3. Civil Unrest."
+    content: "Gold protects you when FinLand goes crazy.\n• Buy Gold: During riots, war, or currency collapse.\n• Sell Gold: When peace returns and the market is happy."
   },
   {
-    title: "5. The Objective: Absolute Return",
+    title: "4. Cash is Ammunition",
+    icon: "bonds",
+    content: "Don't stay 100% invested all the time. Keep some Cash (INR) to buy cheap assets when the market crashes (and it will)."
+  },
+  {
+    title: "5. Your Mission",
     icon: "target",
-    content: "Your goal is simple: MAXIMIZE ABSOLUTE RETURNS.\n\nNavigate the chaos of King Ajit's decrees. Rotate capital from dying sectors to booming ones. The fund manager with the highest Final NAV (Net Asset Value) wins.\n\nCash Flow is King."
+    content: "Maximize your Final Portfolio Value (NAV) after 15 months.\n\nIgnore the daily noise. Spot the trend, allocate heavy, and exit before the bubble bursts."
   }
 ];
 
@@ -56,7 +56,7 @@ export const SCENARIO_DATA: ScenarioRound[] = [
   {
     id: 1,
     title: "The Royal 'Hangover' Decree",
-    news: "The Kingdom of FinLand woke up to a bizarre proclamation. King Ajit, nursing a legendary hangover from last night's 'Royal Soma' party, declared that his current palace 'lacks feng shui' and creates 'bad vibes.' In a decree signed on a napkin, he has ordered the immediate construction of 'Ajit-Atlantis'—a floating city on the FinLand Lake, complete with gold-plated water slides. \n\nIshan (the Infra Kingpin) was seen sprinting out of the palace, high-fiving the Royal Treasurer, clutching a massive contract scroll. However, whispers in the tea stalls suggest the Royal Treasury is actually empty. To distract the public from the inevitable taxes, Ajit has simultaneously announced 'Free Biryani Fridays' for the next year. While the public cheers, Sameep (the Banking Mafia) was spotted sitting in a dark corner of the Cricket Club, sipping green tea with a terrifyingly calm smile, refusing to comment on how this madness will be funded. Is this a construction boom or a fiscal disaster waiting to happen?",
+    news: "The Kingdom of FinLand woke up to a bizarre proclamation. King Ajit, nursing a legendary hangover from last night's 'Royal Soma' party, declared that his current palace 'lacks feng shui' and creates 'bad vibes.' In a decree signed on a napkin, he has ordered the immediate construction of 'Ajit-Atlantis'—a floating city on the FinLand Lake, complete with gold-plated water slides. \n\nIshan (the Infra Kingpin) was seen sprinting out of the palace, high-fiving the Royal Treasurer, clutching a massive contract scroll. However, whispers in the tea stalls suggest the Royal Treasury is actually empty. To distract the public from the inevitable taxes, Ajit has simultaneously announced 'Free Biryani Fridays' for the next year. While the public cheers, Sameep (the Banking Mafia) was spotted sitting in a dark corner of the Cricket Club, sipping green tea with a terrifyingly calm smile. Amidst this brick-laying frenzy, a sober realization hits: FinLand is decades behind the world in technology. While others build AI, we are still figuring out how to keep the WiFi on during rain. A massive, desperate push for technology is needed just to catch up.",
     macro: { gdp: '6.0% (Base)', repo: '6.0%', cpi: '4.0%', vix: 14 },
     returns: { 
         [AssetType.INFRA]: 0.12, 
@@ -101,7 +101,7 @@ export const SCENARIO_DATA: ScenarioRound[] = [
   {
     id: 4,
     title: "Sahil Cleans the 'Mess'",
-    news: "A key witness, 'Honest Makarand', who was testifying about Ishan's illegal sand mining, has mysteriously 'gone on a permanent vacation' to the bottom of the lake. Sahil's agency issued a press release stating, 'We facilitate work-life balance, mostly the end of life part.' \n\nPanic has gripped FinLand. The rule of law has evaporated. Foreign Institutional Investors (FIIs) are selling everything that isn't nailed down. The FinLand Rupee is crashing against the Dollar. King Ajit tried to calm the nation by performing a magic trick on live TV, but he accidentally set the stage curtain on fire. Riots have broken out in the industrial belt. In times of total anarchy, paper money feels worthless.",
+    news: "A key witness, 'Honest Makarand', who was testifying about Ishan's illegal sand mining, has mysteriously 'gone on a permanent vacation' to the bottom of the lake. Sahil's agency issued a press release stating, 'We facilitate work-life balance, mostly the end of life part.' \n\nPanic has gripped FinLand. The rule of law has evaporated. Foreign Institutional Investors (FIIs) are selling everything that isn't nailed down. The FinLand Rupee is crashing against the Dollar. King Ajit tried to calm the nation by performing a magic trick on live TV, but he accidentally set the stage curtain on fire. Riots have broken out in the industrial belt. Yet, unnoticed by the rioters, the seed planted in Round 1 is sprouting. Quietly, the Royal Treasury has been funneling grants into R&D, attempting to build indigenous tech capabilities while the streets burn.",
     macro: { gdp: '5.2% (Falling)', repo: '6.25% (Hike fear)', cpi: '5.5%', vix: 40 },
     returns: { 
         [AssetType.INFRA]: -0.05, 
@@ -205,7 +205,7 @@ export const SCENARIO_DATA: ScenarioRound[] = [
   },
   {
     id: 11,
-    title: "The 'Golden Pen' Rumor Mill",
+    title: "The 'Golden Pen' Saga",
     news: "The market woke up to a scandalous revelation about the Round 9 'Clean Up.' It turns out, justice wasn't blind; it was just expensive. While Sameep was being handcuffed and dragged to jail back then, Ishan had secretly met Chief Justice BD in a back alley and gifted him a legendary 'Golden Pen' encrusted with rare diamonds. This bribe is what kept Ishan's name out of the police files while Sameep took the fall.\n\nSameep, now out on bail, found out about this betrayal last night. Enraged and drunk at a wild penthouse party, he screamed that he would 'erase' Ishan. By morning, this drunken rant morphed into a viral WhatsApp forward claiming Sameep has liquidated assets to hire Sahil (The Hitman) to target Ishan's executives. Rumors of mass resignations are flying. The market is paralyzed—investors are unsure if this is a real gang war or just a hangover-induced exaggeration.",
     macro: { gdp: '6.0% (Choppy)', repo: '6.5%', cpi: '4.8%', vix: 22 },
     returns: { 
@@ -266,7 +266,7 @@ export const SCENARIO_DATA: ScenarioRound[] = [
   {
     id: 15,
     title: "The 'Wisdom' of King Ajit",
-    news: "In the season finale, King Ajit visits the construction site of 'Ajit-Atlantis.' He sees the half-built pillars, the escalating bills, and the sheer headache of managing a floating city. He turns to his advisors and says, 'You know what? I prefer solid ground. This project is giving me seasickness.' \n\nHe halts the project 'indefinitely.' Instead, he announces a 'Fiscal Prudence' package to pay off the kingdom's debts. The dream of the floating palace is dead, but the nightmare of bankruptcy is also over. FinLand ends the year with boring, solid, predictable governance. The wild ride is over.",
+    news: "King Ajit visits the construction site of 'Ajit-Atlantis.' He sees the half-built pillars, the escalating bills, and the sheer headache of managing a floating city. He is exhausted. The last 15 months have been a blur of scams, riots, and festivals. He sits on a pile of bricks, head in hands, paralyzed by indecision. Should he double down and finish the dream to prove the haters wrong, or bury the project and retire to the Himalayas? The Kingdom holds its breath. There is no decree today, only a King staring blankly into the abyss of his own ambition.",
     macro: { gdp: '7.5% (Solid)', repo: '6.0%', cpi: '4.0%', vix: 10 },
     returns: { 
         [AssetType.INFRA]: -0.05, 
@@ -276,6 +276,6 @@ export const SCENARIO_DATA: ScenarioRound[] = [
         [AssetType.GOLD]: -0.01, 
         [AssetType.CASH]: 0 
     },
-    explanation: "Fiscal Consolidation. Cancelling the mega-project hurt INFRA (lost contracts) in the short term, but saved the economy from long-term debt ruin. BFSI and broad markets rallied on the improved sovereign rating. A sensible end to a crazy decade."
+    explanation: "Uncertainty & Stagnation. The King's indecision is the worst outcome for markets. INFRA bleeds as the project stalls without a kill-switch. Investors, tired of the drama, move to defensive FMCG and cash out. The simulation ends not with a bang, but with a confused whimper."
   }
 ];
