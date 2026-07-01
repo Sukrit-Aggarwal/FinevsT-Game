@@ -13,10 +13,10 @@ export interface ScenarioRound {
   title: string;
   news: string;
   macro: {
-    gdp: string;
-    repo: string;
-    cpi: string;
-    vix: number;
+    fearIndex: number;
+    sentiment: string;
+    valuation: string;
+    computeDemand: string;
   };
   returns: {
     [key in AssetType]?: number; // Percentage as decimal (e.g. 0.05 for 5%)
