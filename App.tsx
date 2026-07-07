@@ -439,7 +439,7 @@ function App() {
               <p className="text-xl font-medium text-gray-800 mb-6 leading-relaxed border-l-4 border-black pl-4">
                 <strong>Profile:</strong> Fund Manager on FinLand's BSEV (Bombay Stock Exchange of Vibes).<br />
                 <strong>Mission:</strong> Navigate the global AGI saga — from Panthropic's Claudius to Ilon Mush's Groku — to maximize your portfolio value.<br />
-                <strong>Duration:</strong> 3 Rounds of absolute chaos.
+                <strong>Duration:</strong> 5 Rounds of absolute chaos.
               </p>
 
               <div className="bg-[#FEF9C3] border-2 border-black p-6 mb-8">

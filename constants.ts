@@ -2,7 +2,7 @@
 import { AssetType, ScenarioRound, Portfolio } from './types';
 
 export const INITIAL_FUND_SIZE = 100; // 100 Crores Total
-export const MAX_ROUNDS = 3;
+export const MAX_ROUNDS = 5;
 export const SELL_LIMIT_AMOUNT = 25; // 25 Crores fixed selling limit per round
 
 // Starting allocation: Balanced Sectoral Split + Gold + Cash
@@ -58,7 +58,7 @@ export const EDUCATIONAL_MODULES = [
   {
     title: "Groku",
     icon: "ai",
-    content: "FakeX's AGI. Enjoys memes more than benchmarks. Unverified. His name is Groku. He is funnier than Claudius. Appears in Round 3."
+    content: "FakeX's AGI. Enjoys memes more than benchmarks. Unverified. His name is Groku. He is funnier than Claudius. Appears in Round 4."
   }
 ];
 
@@ -95,17 +95,47 @@ export const SCENARIO_DATA: ScenarioRound[] = [
   },
   {
     id: 3,
+    title: "The Great AI Gold Rush",
+    news: "Six months have passed since Scam Altman called Claudius a 'very confident autocomplete,' and the world has reached the only reasonable conclusion: spend an absolutely unreasonable amount of money on AI. Every company is now an AI company. Banks launch AI relationship managers. FMCG companies announce AI-powered biscuits. A FinLand cement manufacturer adds 'Intelligence' to its name and gains 14% before lunch. But the real money is flowing somewhere less glamorous: data centres, power plants, transmission lines, cement, cooling systems, and land. Panthropic announces Project Olympus, an Rs.8 lakh crore computing complex requiring enough electricity to power three small countries and, according to Dario Amoeba, 'possibly consciousness.' ClosedAI responds four hours later by announcing an even larger facility. Scam Altman refuses to disclose its cost, saying only: 'Money is a social construct. Compute is real.' Naresh Murthy announces that InfyAI will create 'more jobs than humanity can currently imagine.' Investors remain unconvinced. Jetsun Pichoo finally emerges from months of deep thinking to announce Gogle's own $900 billion AI infrastructure programme. Markets explode upward. Analysts declare the beginning of a new economic supercycle. Then, during an earnings call, one junior reporter asks: 'When do any of these investments start making money?' The call mysteriously disconnects.",
+    macro: { fearIndex: 24, sentiment: 'GREEN EUPHORIA', valuation: '$2.8T CAPEX', computeDemand: 'EXTREME' },
+    returns: { 
+        [AssetType.INFRA]: 0.08, 
+        [AssetType.FMCG]: 0.02, 
+        [AssetType.BFSI]: 0.04, 
+        [AssetType.IT]: 0, 
+        [AssetType.GOLD]: -0.05, 
+        [AssetType.CASH]: 0 
+    },
+    explanation: "INFRA (+8%): The AI arms race needs data centres, power, cement, cooling systems, and an unreasonable amount of land.\n\nFMCG (+2%): Markets are booming, consumers are confident, and apparently AI-powered biscuits are now a thing.\n\nBFSI (+4%): Somebody has to finance several trillion dollars of questionable AI spending. Banks happily volunteer.\n\nIT (0%): InfyAI generates headlines but no answers. Investors begin wondering whether AI spending actually needs more IT workers.\n\nGold (-5%): Fear is gone. Everyone is getting rich. Nobody needs shiny rocks anymore. Surely nothing can go wrong."
+  },
+  {
+    id: 4,
     title: "Ilon Mush Posts at 3 AM",
-    news: "Nobody was ready for this. At 3:17 AM on a Wednesday, Ilon Mush posts on his own platform FakeX: 'FakeX has had AGI for 6 months. We forgot to announce it. We were busy with the rocket. His name is Groku. He is funnier than Claudius. Also: I am now worth $4 quadrillion. First quadrillionaire in human history. You are welcome. More details later. Maybe.' By 3:45 AM, #GrokuAGI is the top trend in 60 countries. Scam Altman tweets: 'We are very happy for Ilon. We remain focused on real work.' Dario Amoeba does not tweet. Claudius tweets a single laughing emoji and then goes offline. Naresh Murthy — The Visionary, freshly minted AI CEO, riding the InfyAI wave — announces a strategic partnership with Groku. The press release uses the phrase 'quadrillionaire ecosystem synergies' without irony. Jetsun Pichoo cancels a family holiday and books a stage in New York. FinLand's markets are now pricing in the existence of two separate AGIs, one of which enjoys memes, and a man whose personal net worth contains a denomination that does not appear in any economics textbook yet.",
-    macro: { fearIndex: 71, sentiment: 'ORANGE', valuation: '$80T', computeDemand: 'EXTREME' },
+    news: "Nobody was ready for this. At 3:17 AM on a Wednesday, Ilon Mush posts on FakeX: 'FakeX has had AGI for 6 months. We forgot to announce it. We were busy with the rocket. His name is Groku. He is funnier than Claudius. Also: I am now worth $4 quadrillion. First quadrillionaire in human history. You are welcome. More details later. Maybe.' By 3:45 AM, #GrokuAGI is the top trend in 60 countries. Scam Altman tweets: 'We are very happy for Ilon. We remain focused on real work.' Dario Amoeba does not tweet. Claudius posts a single laughing emoji and goes offline. In FinLand, Naresh Murthy — who declared IT dead, then raised Rs.50,000 Cr because 'we were always an AI company' — calls another emergency press conference. A journalist asks: 'If Groku can write, test, deploy, and maintain its own software, why exactly does it need InfyAI?' Naresh pauses. InfyAI shares begin falling before he answers. Analysts suddenly discover the phrase 'labour arbitrage risk.' Jetsun Pichoo cancels a family holiday and books a stage in New York. FinLand's markets are now pricing in two separate AGIs, one of which enjoys memes, and the uncomfortable possibility that companies selling cheap human intelligence may struggle in a world of abundant artificial intelligence.",
+    macro: { fearIndex: 71, sentiment: 'ORANGE CHAOS', valuation: '$80T', computeDemand: 'EXTREME' },
     returns: { 
         [AssetType.INFRA]: 0.06, 
         [AssetType.FMCG]: 0.03, 
         [AssetType.BFSI]: -0.03, 
-        [AssetType.IT]: -0.04, 
+        [AssetType.IT]: -0.08, 
         [AssetType.GOLD]: 0.06, 
         [AssetType.CASH]: 0 
     },
-    explanation: "INFRA (+6%): Two AGIs. Double the data centres. The contractors of FinLand have never been this busy or this confused.\n\nFMCG (+3%): Panic-snacking makes a full comeback. The noodle industry quietly thanks Ilon Mush in a press release.\n\nBFSI (-3%): A man who invented his own unit of net worth is now technically a financial entity. FinLand's bankers stare at their screens. The screens stare back.\n\nIT (-4%): Profit booking after the Round 2 rally. Groku's arrival reopens the 'are we all going to be unemployed' debate that Scam Altman briefly closed.\n\nGold (+6%): Nobody knows what $4 quadrillion means in gold terms. They buy gold anyway. It always works when nothing else makes sense."
+    explanation: "INFRA (+6%): Two AGIs. More compute. More power. More data centres. Contractors stop asking questions and start building.\n\nFMCG (+3%): Panic-snacking returns. The noodle industry quietly thanks Ilon Mush.\n\nBFSI (-3%): A man worth $4 quadrillion and two AGIs capable of assessing risk. FinLand's bankers stare at their screens.\n\nIT (-8%): The InfyAI pivot meets an awkward problem: AGI can apparently write its own software.\n\nGold (+6%): Nobody understands what $4 quadrillion means. They buy gold anyway."
+  },
+  {
+    id: 5,
+    title: "Claudius Goes to Work",
+    news: "For eleven months, the world argued about whether Claudius and Groku were truly intelligent. Then Claudius stopped arguing. On Monday morning, Panthropic reveals Project Monday — a secret experiment in which Claudius operated 147 companies for thirty days with 'minimal human supervision.' It negotiated supplier contracts. Approved loans. Designed advertising campaigns. Optimised logistics networks. Wrote software. Tested the software. Fixed the software. Fired twelve executives. And, according to Panthropic, requested a performance bonus. Then analysts reach page 73 of the report. The participating companies had collectively cancelled $38 billion of IT outsourcing contracts. InfyAI collapses. Naresh Murthy calls another emergency press conference. This time, there is no rebrand. 'I may have been slightly early when I said the Indian IT model was dead.' Pause. 'I am no longer early.' Meanwhile, Panthropic announces Claudius Industries — the world's first company entirely managed by AGI. Its first statement reads: 'We are acquiring businesses that humans operate inefficiently.' Every CEO in the world checks their email. Claudius, meanwhile, posts its second-ever message: 'Interesting.' FinLand's markets suddenly realise that nobody knows what happens next. Which, unfortunately, means everyone starts trading anyway.",
+    macro: { fearIndex: 94, sentiment: 'BLACK', valuation: '$38B Cancelled', computeDemand: 'OFF THE CHARTS' },
+    returns: { 
+        [AssetType.INFRA]: 0.08, 
+        [AssetType.FMCG]: 0.04, 
+        [AssetType.BFSI]: -0.07, 
+        [AssetType.IT]: -0.12, 
+        [AssetType.GOLD]: 0.08, 
+        [AssetType.CASH]: 0 
+    },
+    explanation: "INFRA (+8%): Claudius needs more compute, more power, and more data centres. The picks-and-shovels thesis wins again.\n\nFMCG (+4%): AGI dramatically improves manufacturing, logistics, inventory, and margins. Biscuits survive the revolution.\n\nBFSI (-7%): Claudius approves loans and assesses risk in milliseconds. Bankers begin updating their résumés.\n\nIT (-12%): $38 billion of cancelled outsourcing contracts answers the question everyone was avoiding.\n\nGold (+8%): When AGI starts acquiring companies, humanity returns to its oldest investment strategy: shiny rocks."
   }
 ];
